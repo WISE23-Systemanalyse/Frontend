@@ -21,6 +21,13 @@ const navItems = [
   { name: 'Contact', href: '/contact' },
 ]
 
+const ProfileITems = [
+    { name: 'Your Profile', href: '/profile' },
+    { name: 'Settings', href: '/settings' },
+    { name: 'Sign out', href: '/home' },
+    ]
+
+
 export default function Navbar() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
@@ -141,24 +148,17 @@ export default function Navbar() {
             </div>
           </div>
           <div className="mt-3 space-y-1">
-            <Link
-              href="/profile"
-              className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-            >
-              Your Profile
-            </Link>
-            <Link
-              href="/settings"
-              className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-            >
-              Settings
-            </Link>
-            <Link
-              href="/sign-out"
-              className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-            >
-              Sign out
-            </Link>
+            {
+                ProfileITems.map((item) => (
+                    <Link
+                        key={item.name}
+                        href={item.href}
+                        className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                    >
+                        {item.name}
+                    </Link>
+                ))
+            }
           </div>
         </div>
       </div>
