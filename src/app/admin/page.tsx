@@ -1,26 +1,28 @@
 'use client'
-import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { fetchUser } from './fetchdata'
+//import { useState } from 'react'
+// import { Button } from "@/components/ui/button"
+// import { Input } from "@/components/ui/input"
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+// import { fetchUser } from './fetchdata'
+import { UserList } from '@/components/UserList'
 
-interface User {
-  id: number
-  name: string
-  email: string
-}
+
+// interface User {
+//   id: number
+//   name: string
+//   email: string
+// }
 
 export default function UserQuery() {
-  const [userId, setUserId] = useState('')
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // const [userId, setUserId] = useState('')
+  // const [user, setUser] = useState<User | null>(null)
+  // const [isLoading, setIsLoading] = useState(false)
+  // const [error, setError] = useState<string | null>(null)
 
 
   return (
     <div className='flex h-screen w-screen justify-center items-center'>
-      <Card className="w-full max-w-md mx-auto">
+      {/* <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>Benutzerabfrage</CardTitle>
       </CardHeader>
@@ -46,7 +48,8 @@ export default function UserQuery() {
           </div>
         )}
       </CardContent>
-    </Card>
+    </Card> */}
+    <UserList />
     </div>
   )
 }

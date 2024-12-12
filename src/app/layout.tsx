@@ -42,7 +42,8 @@ export default function RootLayout({
           {/* Zeige das Sign-In Fenster, wenn der Benutzer ausgeloggt ist
           <SignedOut>
             <div className="flex justify-center items-center h-screen w-screen">
-              <SignIn />
+              
+            <SignUp />
             </div>
           </SignedOut> */}
         </body>
