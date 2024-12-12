@@ -3,7 +3,6 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Film, Search, User } from 'lucide-react'
-
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 // import {
@@ -13,7 +12,7 @@ import { Button } from '@/components/ui/button'
 //   DropdownMenuTrigger,
 // } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
-import { SignedIn, UserButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 
 const navItems = [
   { name: 'Home', href: '/' },
@@ -81,6 +80,9 @@ export default function Navbar() {
             <SignedIn>
               <UserButton />
             </SignedIn>
+            <SignedOut>
+              <SignInButton />
+            </SignedOut>
               {/* <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">

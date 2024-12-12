@@ -1,4 +1,4 @@
-import { ClerkProvider, SignedIn, SignedOut, SignIn, SignUp } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -33,18 +33,18 @@ export default function RootLayout({
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           {/* Zeige den Inhalt der Homepage nur, wenn der Benutzer eingeloggt ist */}
-          <SignedIn>
+          
             <Navbar />
             {children} {/* Hauptinhalt wird nur hier angezeigt, wenn eingeloggt */}
             <Footer />
-          </SignedIn>
+          
 
-          {/* Zeige das Sign-In Fenster, wenn der Benutzer ausgeloggt ist */}
+          {/* Zeige das Sign-In Fenster, wenn der Benutzer ausgeloggt ist
           <SignedOut>
             <div className="flex justify-center items-center h-screen w-screen">
               <SignIn />
             </div>
-          </SignedOut>
+          </SignedOut> */}
         </body>
       </html>
     </ClerkProvider>
