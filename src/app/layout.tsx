@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import { ClerkProvider, SignedIn, SignedOut, SignIn, SignUp } from "@clerk/nextjs";
+import { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import  Navbar  from "@/components/navbar/Navbar";
-import Footer  from "@/components/footer/Footer";
+import Navbar from "@/components/navbar/Navbar";
+import Footer from "@/components/footer/Footer";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -26,14 +27,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Navbar />
-        {children}
-        <Footer/>
-      </body>
-    </html>
+    <ClerkProvider
+      signInUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL}
+      signUpUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL}>
+      <html lang="en">
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+          {/* Zeige den Inhalt der Homepage nur, wenn der Benutzer eingeloggt ist */}
+          <SignedIn>
+            <Navbar />
+            {children} {/* Hauptinhalt wird nur hier angezeigt, wenn eingeloggt */}
+            <Footer />
+          </SignedIn>
+
+          {/* Zeige das Sign-In Fenster, wenn der Benutzer ausgeloggt ist */}
+          <SignedOut>
+            <div className="flex justify-center items-center h-screen w-screen">
+              <SignIn />
+            </div>
+          </SignedOut>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

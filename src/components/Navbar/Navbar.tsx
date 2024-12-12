@@ -6,13 +6,14 @@ import { Film, Search, User } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuTrigger,
+// } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { SignedIn, UserButton } from '@clerk/nextjs';
 
 const navItems = [
   { name: 'Home', href: '/' },
@@ -77,7 +78,10 @@ export default function Navbar() {
               </div>
             </div>
             <div className="ml-3 relative">
-              <DropdownMenu>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+              {/* <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
                     <span className="sr-only">Open user menu</span>
@@ -95,7 +99,7 @@ export default function Navbar() {
                     <Link href="/sign-out">Sign out</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
+              </DropdownMenu> */}
             </div>
           </div>
           <div className="-mr-2 flex items-center sm:hidden">
