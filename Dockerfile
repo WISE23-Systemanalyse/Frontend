@@ -11,7 +11,7 @@ COPY /src/package*.json ./
 RUN npm install
 
 # Copy the entire Next.js app into the container
-COPY /src ./
+COPY src ./
 
 # Build the Next.js app
 RUN npm run build
