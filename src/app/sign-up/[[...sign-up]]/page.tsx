@@ -5,7 +5,7 @@ export default function Page() {
   return (
     <div className="flex justify-center items-center h-screen">
       <SignUp
-      forceRedirectUrl="/api/user-onboarding"
+      forceRedirectUrl="./api/user-onboarding"
 />
     </div>
   );

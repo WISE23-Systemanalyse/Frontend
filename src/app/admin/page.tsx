@@ -5,6 +5,8 @@
 // import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 // import { fetchUser } from './fetchdata'
 import { UserList } from '@/components/UserList'
+import { Protect} from '@clerk/nextjs'
+
 
 
 // interface User {
@@ -13,16 +15,51 @@ import { UserList } from '@/components/UserList'
 //   email: string
 // }
 
-export default function UserQuery() {
+export default function UserQuery(request: Request) {
   // const [userId, setUserId] = useState('')
   // const [user, setUser] = useState<User | null>(null)
   // const [isLoading, setIsLoading] = useState(false)
   // const [error, setError] = useState<string | null>(null)
 
-
   return (
-    <div className='flex h-screen w-screen justify-center items-center'>
-      {/* <Card className="w-full max-w-md mx-auto">
+    <Protect 
+      role= 'org_2qAAf8Y3WwPLhps3xcM1Eosy8nX:admin'
+      fallback={
+        <div className="flex items-center justify-center h-screen w-screen">
+      <h1 className="text-4xl">You do not have permission to this page</h1>
+    </div>
+      }
+      >
+      <div className='flex h-screen w-screen justify-center items-center'>
+        <UserList />
+      </div>
+     </Protect>
+  )
+}
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     {/* <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>Benutzerabfrage</CardTitle>
       </CardHeader>
@@ -49,7 +86,3 @@ export default function UserQuery() {
         )}
       </CardContent>
     </Card> */}
-    <UserList />
-    </div>
-  )
-}
