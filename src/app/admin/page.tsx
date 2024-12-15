@@ -15,7 +15,7 @@ import { Protect} from '@clerk/nextjs'
 //   email: string
 // }
 
-export default function UserQuery(request: Request) {
+export default function UserQuery() {
   // const [userId, setUserId] = useState('')
   // const [user, setUser] = useState<User | null>(null)
   // const [isLoading, setIsLoading] = useState(false)

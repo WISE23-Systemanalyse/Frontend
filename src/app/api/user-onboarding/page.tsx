@@ -4,8 +4,6 @@ import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { hash } from 'crypto';
-
 const MiddlewarePage = () => {
   const { user } = useUser();
   const router = useRouter();
