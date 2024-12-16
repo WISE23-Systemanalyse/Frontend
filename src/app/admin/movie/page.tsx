@@ -1,16 +1,17 @@
 'use client'
 import { useState } from 'react'
-import { Button } from "../../../components/ui/button"
-import { Input } from "../../../components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
-import { Textarea } from "../../../components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Textarea } from "@/components/ui/textarea"
 
 interface Movie {
   title: string
   description: string
   duration: number
   releaseDate: string
-  imageUrl: string
+  image_url: string
+  rating: number
 }
 
 interface SearchResult {
@@ -29,9 +30,9 @@ interface SearchResult {
   production_countries: { iso_3166_1: string; name: string }[]
 }
 
-const TMDB_API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2M2NlYzU4ZGQ4ODI3ODA3NzViMGNhZjRhZGVlMTY2YyIsIm5iZiI6MTczMzIyMjU3MS40NjcsInN1YiI6IjY3NGVlMGFiOTAyOWExZmNjMzZhYTVjNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.nSa8QmTJD6aFuCFSGLRFBLe4kin-zR-nudk_qK0643w'
-const TMDB_API_URL = process.env.TMDB_API_URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.kts.testcode.tools'
+const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY
+const TMDB_API_URL = process.env.NEXT_PUBLIC_TMDB_API_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 
 export default function CreateMovie() {
   const [movie, setMovie] = useState<Movie>({
@@ -39,7 +40,8 @@ export default function CreateMovie() {
     description: '',
     duration: 0,
     releaseDate: '',
-    imageUrl: ''
+    image_url: '',
+    rating: 0
   })
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
@@ -128,7 +130,8 @@ export default function CreateMovie() {
       description: result.overview,
       duration: result.runtime || 0,
       releaseDate: result.release_date,
-      imageUrl: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : ''
+      image_url: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : '',
+      rating: result.vote_average
     })
     setSearchResults([])
     setSearchQuery('')
@@ -148,7 +151,9 @@ export default function CreateMovie() {
         body: JSON.stringify({
           title: movie.title,
           year: new Date(movie.releaseDate).getFullYear(),
-          imageurl: movie.imageUrl
+          description: movie.description,
+          rating: movie.rating,
+          imageUrl: movie.image_url
         })
       })
 
@@ -161,7 +166,8 @@ export default function CreateMovie() {
         description: '',
         duration: 0,
         releaseDate: '',
-        imageUrl: ''
+        image_url: '',
+        rating: 0
       })
 
       alert('Film wurde erfolgreich gespeichert!')
@@ -220,8 +226,19 @@ export default function CreateMovie() {
             <div>
               <Input
                 placeholder="Bild-URL"
-                value={movie.imageUrl}
-                onChange={(e) => setMovie({...movie, imageUrl: e.target.value})}
+                value={movie.image_url}
+                onChange={(e) => setMovie({...movie, image_url: e.target.value})}
+              />
+            </div>
+            <div>
+              <Input
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                placeholder="Bewertung (0-10)"
+                value={movie.rating}
+                onChange={(e) => setMovie({...movie, rating: parseFloat(e.target.value)})}
               />
             </div>
             <Button type="submit" disabled={isLoading}>
