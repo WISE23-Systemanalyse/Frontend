@@ -6,7 +6,6 @@
 // import { fetchUser } from './fetchdata'
 import { UserList } from '@/components/UserList'
 import { useUser } from '@clerk/nextjs'
-import { Protect} from '@clerk/nextjs'
 import { useEffect, useState } from 'react';
 
 
@@ -43,7 +42,7 @@ export default function UserQuery() {
         console.log('Erhaltene User Daten:', userData);
         setData(userData);
       } catch (error) {
-        console.error('Fehler beim Abrufen der Nutzerdaten:', error);
+        console.log('Fehler beim Abrufen der Nutzerdaten:', error);
       } finally {
         setIsLoading(false);
       }
