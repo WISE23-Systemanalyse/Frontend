@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import Image from 'next/image'
 
 interface Movie {
   title: string
@@ -30,8 +31,19 @@ interface SearchResult {
   production_countries: { iso_3166_1: string; name: string }[]
 }
 
-const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY
-const TMDB_API_URL = process.env.NEXT_PUBLIC_TMDB_API_URL
+interface TMDBSearchResult {
+  id: number
+  title: string
+  original_title: string
+  overview: string
+  release_date: string
+  runtime: number
+  poster_path: string
+  backdrop_path: string
+  vote_average: number
+  genre_ids: number[]
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 
 export default function CreateMovie() {
@@ -75,7 +87,7 @@ export default function CreateMovie() {
       }
 
       // Direkt die Ergebnisse setzen, da die Details bereits enthalten sind
-      const mappedResults = searchResults.map(movie => ({
+      const mappedResults = searchResults.map((movie: TMDBSearchResult) => ({
         id: movie.id,
         title: movie.title,
         original_title: movie.original_title,
@@ -264,9 +276,11 @@ export default function CreateMovie() {
                     <div className="flex gap-3">
                       {result.poster_path && (
                         <div className="w-16 min-w-16 h-24 relative">
-                          <img 
+                          <Image 
                             src={`https://image.tmdb.org/t/p/w92${result.poster_path}`}
                             alt={result.title}
+                            width={64}
+                            height={96}
                             className="absolute w-full h-full object-cover rounded"
                           />
                         </div>
