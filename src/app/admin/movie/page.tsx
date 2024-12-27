@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import Image from 'next/image'
 
 interface Movie {
   title: string
@@ -276,11 +275,9 @@ export default function CreateMovie() {
                     <div className="flex gap-3">
                       {result.poster_path && (
                         <div className="w-16 min-w-16 h-24 relative">
-                          <Image 
+                          <img 
                             src={`https://image.tmdb.org/t/p/w92${result.poster_path}`}
                             alt={result.title}
-                            width={64}
-                            height={96}
                             className="absolute w-full h-full object-cover rounded"
                           />
                         </div>
