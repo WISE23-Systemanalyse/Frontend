@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import Image from 'next/image'
 
 interface Movie {
   title: string
@@ -31,22 +30,8 @@ interface SearchResult {
   production_countries: { iso_3166_1: string; name: string }[]
 }
 
-interface TMDBMovieResult {
-  id: number
-  title: string
-  overview: string
-}
-
-interface TMDBCrew {
-  job: string;
-  name: string;
-}
-
-interface TMDBCast {
-  name: string;
-}
-
 const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY
+const TMDB_API_URL = process.env.NEXT_PUBLIC_TMDB_API_URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 
 export default function CreateMovie() {
@@ -70,66 +55,44 @@ export default function CreateMovie() {
     setError(null)
     
     try {
-      // Erste Suche nach Filmen
+      // Neue API-Route verwenden
       const searchResponse = await fetch(
-        `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(searchQuery)}&language=de-DE`,
+        `${API_BASE_URL}/movies/tmdb/search?query=${encodeURIComponent(searchQuery)}`,
         {
           headers: {
-            'accept': 'application/json',
-            'Authorization': `Bearer ${TMDB_API_KEY}`
+            'accept': 'application/json'
           }
         }
       )
       
-      const searchData = await searchResponse.json()
-      console.log('Suchergebnisse:', searchData)
+      const searchResults = await searchResponse.json()
+      console.log('Suchergebnisse:', searchResults)
 
-      if (!searchData.results?.length) {
+      if (!searchResults?.length) {
         setError('Keine Filme gefunden')
         setSearchResults([])
         return
       }
 
-      // Details für die ersten 5 Filme holen
-      const detailedResults = await Promise.all(
-        searchData.results.slice(0, 5).map(async (movie: TMDBMovieResult) => {
-          const [details, credits] = await Promise.all([
-            // Film-Details
-            fetch(`https://api.themoviedb.org/3/movie/${movie.id}?language=de-DE`, {
-              headers: {
-                'accept': 'application/json',
-                'Authorization': `Bearer ${TMDB_API_KEY}`
-              }
-            }).then(res => res.json()),
-            // Cast und Crew
-            fetch(`https://api.themoviedb.org/3/movie/${movie.id}/credits?language=de-DE`, {
-              headers: {
-                'accept': 'application/json',
-                'Authorization': `Bearer ${TMDB_API_KEY}`
-              }
-            }).then(res => res.json())
-          ])
+      // Direkt die Ergebnisse setzen, da die Details bereits enthalten sind
+      const mappedResults = searchResults.map(movie => ({
+        id: movie.id,
+        title: movie.title,
+        original_title: movie.original_title,
+        overview: movie.overview,
+        release_date: movie.release_date,
+        runtime: movie.runtime || 0,
+        poster_path: movie.poster_path,
+        backdrop_path: movie.backdrop_path,
+        vote_average: movie.vote_average,
+        genres: movie.genre_ids.map(id => ({ id, name: '' })), // Genres werden später angepasst
+        director: '', // Optional: Könnte über einen zusätzlichen API-Call geholt werden
+        cast: [], // Optional: Könnte über einen zusätzlichen API-Call geholt werden
+        production_countries: []
+      }))
 
-          return {
-            id: movie.id,
-            title: details.title,
-            original_title: details.original_title,
-            overview: details.overview,
-            release_date: details.release_date,
-            runtime: details.runtime,
-            poster_path: details.poster_path,
-            backdrop_path: details.backdrop_path,
-            vote_average: details.vote_average,
-            genres: details.genres,
-            director: credits.crew.find((person: TMDBCrew) => person.job === 'Director')?.name,
-            cast: credits.cast.slice(0, 3).map((actor: TMDBCast) => actor.name),
-            production_countries: details.production_countries
-          }
-        })
-      )
-
-      console.log('Detaillierte Ergebnisse:', detailedResults)
-      setSearchResults(detailedResults)
+      console.log('Verarbeitete Ergebnisse:', mappedResults)
+      setSearchResults(mappedResults)
     } catch (err) {
       console.error('Suchfehler:', err)
       setError('Fehler bei der Filmsuche')
@@ -301,11 +264,9 @@ export default function CreateMovie() {
                     <div className="flex gap-3">
                       {result.poster_path && (
                         <div className="w-16 min-w-16 h-24 relative">
-                          <Image 
+                          <img 
                             src={`https://image.tmdb.org/t/p/w92${result.poster_path}`}
                             alt={result.title}
-                            width={64}
-                            height={96}
                             className="absolute w-full h-full object-cover rounded"
                           />
                         </div>
