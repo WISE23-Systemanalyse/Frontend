@@ -16,6 +16,7 @@ import {
 const navItems = [
   { name: 'Filme', href: '/' },
   { name: 'Programm', href: '/programm' },
+  { name: 'Über uns', href: '/about' },
   { name: 'Kontakt', href: '/contact' },
 ]
 
