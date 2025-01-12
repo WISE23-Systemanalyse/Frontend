@@ -5,10 +5,42 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
 const footerLinks = [
-  { title: 'Company', links: ['About Us', 'Careers', 'Contact Us', 'Press'] },
-  { title: 'Movies', links: ['Now Showing', 'Coming Soon', 'Trailers', 'Genres'] },
-  { title: 'Services', links: ['Gift Cards', 'Mobile App', 'Corporate Events', 'Advertise'] },
-  { title: 'Help', links: ['FAQs', 'Terms of Use', 'Privacy Policy', 'Accessibility'] },
+  { 
+    title: 'Unternehmen', 
+    links: [
+      { name: 'Über uns', href: '/about' },
+      { name: 'Karriere', href: '#' },
+      { name: 'Kontakt', href: '/contact' },
+      { name: 'Impressum', href: '/impressum' },
+    ] 
+  },
+  { 
+    title: 'Filme', 
+    links: [
+      { name: 'Aktuell', href: '#' },
+      { name: 'Demnächst', href: '#' },
+      { name: 'Trailer', href: '#' },
+      { name: 'Genres', href: '#' },
+    ]
+  },
+  { 
+    title: 'Service', 
+    links: [
+      { name: 'Gutscheine', href: '#' },
+      { name: 'Mobile App', href: '#' },
+      { name: 'Firmenevents', href: '#' },
+      { name: 'Werbung', href: '#' },
+    ]
+  },
+  { 
+    title: 'Hilfe', 
+    links: [
+      { name: 'FAQ', href: '#' },
+      { name: 'AGB', href: '/agb' },
+      { name: 'Datenschutz', href: '#' },
+      { name: 'Barrierefreiheit', href: '#' },
+    ]
+  },
 ]
 
 const socialLinks = [
@@ -32,12 +64,12 @@ export default function Footer() {
                   </h3>
                   <ul role="list" className="mt-4 space-y-4">
                     {column.links.map((link) => (
-                      <li key={link}>
+                      <li key={link.name}>
                         <Link 
-                          href="#" 
+                          href={link.href} 
                           className="text-base text-white hover:text-red-500 transition-colors duration-200"
                         >
-                          {link}
+                          {link.name}
                         </Link>
                       </li>
                     ))}
@@ -53,12 +85,12 @@ export default function Footer() {
                   </h3>
                   <ul role="list" className="mt-4 space-y-4">
                     {column.links.map((link) => (
-                      <li key={link}>
+                      <li key={link.name}>
                         <Link 
-                          href="#" 
+                          href={link.href} 
                           className="text-base text-white hover:text-red-500 transition-colors duration-200"
                         >
-                          {link}
+                          {link.name}
                         </Link>
                       </li>
                     ))}
