@@ -43,7 +43,7 @@ interface TMDBSearchResult {
   genre_ids: number[]
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL
+const API_BASE_URL = process.env.BACKEND_URL
 
 export default function CreateMovie() {
   const [movie, setMovie] = useState<Movie>({
