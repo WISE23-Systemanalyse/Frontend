@@ -1,11 +1,9 @@
 import React from 'react'
 
-const Contact = () => {
+export default function Contact() {
   return (
-    <div className='flex justify-center items-center h-screen w-screen'>
-      <h1 className='text-3xl'>Contact</h1>
+    <div className="flex items-center justify-center h-screen w-screen" style={{ backgroundColor: '#141414' }}>
+      <h1 className="text-4xl text-red-800">Contact</h1>
     </div>
   )
 }
-
-export default Contact

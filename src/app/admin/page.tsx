@@ -18,16 +18,15 @@ export default function UserQuery() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-
   return (
-    <div className='flex h-screen w-screen justify-center items-center'>
-      <Card className="w-full max-w-md mx-auto">
+    <div className="flex items-center justify-center h-screen w-screen" style={{ backgroundColor: '#141414' }}>
+      <Card className="w-full max-w-md mx-auto bg-[#2C2C2C] border-0">
         <CardHeader>
-          <CardTitle>Benutzerabfrage</CardTitle>
+          <CardTitle className="text-white">Benutzerabfrage</CardTitle>
         </CardHeader>
         <CardContent>
           <Link href="/admin/movie" className="block mb-4">
-            <Button className="w-full">Neuen Film anlegen</Button>
+            <Button className="w-full bg-red-600 hover:bg-red-700 text-white">Neuen Film anlegen</Button>
           </Link>
 
           <div className="flex space-x-2 mb-4">
@@ -36,15 +35,20 @@ export default function UserQuery() {
               placeholder="Benutzer ID eingeben"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
+              className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
             />
-            <Button onClick={() => fetchUser({ userId: Number(userId), setUser, setIsLoading, setError })} disabled={isLoading}>
+            <Button 
+              onClick={() => fetchUser({ userId: Number(userId), setUser, setIsLoading, setError })} 
+              disabled={isLoading}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
               {isLoading ? 'Lädt...' : 'Abfragen'}
             </Button>
           </div>
 
           {error && <p className="text-red-500 mb-2">{error}</p>}
           {user && (
-            <div>
+            <div className="text-white">
               <h3 className="font-bold mb-2">Benutzerdaten:</h3>
               <p>ID: {user.id}</p>
               <p>Name: {user.name}</p>

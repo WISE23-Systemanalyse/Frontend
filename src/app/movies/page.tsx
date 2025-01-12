@@ -2,7 +2,7 @@ import React from 'react'
 
 const Movies = () => {
   return (
-    <div className='flex items-center justify-center'>
+    <div className="bg-gray-900 text-red-300">
         <h1>ALL Movies</h1>
     </div>
   )
