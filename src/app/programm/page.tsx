@@ -1,11 +1,9 @@
 import React from 'react'
 
-const Programm = () => {
+export default function Programm() {
   return (
-    <div className="flex items-center justify-center h-screen w-screen">
-        <h1 className=" text-4xl">Programm</h1>
+    <div className="flex items-center justify-center h-screen w-screen" style={{ backgroundColor: '#141414' }}>
+        <h1 className="text-4xl text-red-800">Programm</h1>
     </div>
   )
 }
-
-export default Programm
