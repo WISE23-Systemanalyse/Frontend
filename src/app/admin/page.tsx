@@ -29,6 +29,9 @@ export default function UserQuery() {
           <Link href="/admin/movie" className="block mb-4">
             <Button className="w-full">Neuen Film anlegen</Button>
           </Link>
+          <Link href="/admin/show" className="block mb-4">
+            <Button className="w-full">Neue Vorstellung anlegen</Button>
+          </Link>
 
           <div className="flex space-x-2 mb-4">
             <Input

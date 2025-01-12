@@ -16,7 +16,7 @@ export const fetchUser = async ({userId, setUser, setError, setIsLoading }: Prop
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.BACKEND_URL}/user/${userId}`)
+      const response = await fetch(`${process.env.BACKEND_URL}/users/${userId}`)
       console.log("Response: ", response)
       if (!response.ok) {
         throw new Error('User nicht gefunden')
