@@ -40,7 +40,7 @@ export default function Home() {
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/movies`)
+        const response = await fetch(`${process.env.BACKEND_URL}/movies`)
         if (!response.ok) {
           throw new Error('Fehler beim Laden der Filme')
         }
