@@ -33,13 +33,13 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
 
   return (
-    <nav className="bg-background shadow-sm">
+    <nav className="bg-black text-white sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <Film className="h-8 w-8 text-primary" />
-              <span className="ml-2 text-2xl font-bold text-primary">CinemaPlus</span>
+              <Film className="h-8 w-8 text-red-600" />
+              <span className="ml-2 text-2xl font-bold text-red-600">CinemaPlus</span>
             </Link>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               {navItems.map((item) => (
@@ -49,8 +49,8 @@ export default function Navbar() {
                   className={cn(
                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium',
                     pathname === item.href
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:border-gray-300 hover:text-gray-700'
+                      ? 'border-red-500 text-red-500'
+                      : 'border-transparent text-white hover:border-red-500 hover:text-red-500'
                   )}
                 >
                   {item.name}
@@ -64,12 +64,12 @@ export default function Navbar() {
                 <label htmlFor="search" className="sr-only">Search</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                    <Search className="h-5 w-5 text-red-400" aria-hidden="true" />
                   </div>
                   <Input
                     id="search"
                     name="search"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
+                    className="block w-full pl-10 pr-3 py-2 rounded-md leading-5 bg-[#3C3C3C] text-white placeholder-gray-500 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ring-0 focus-visible:ring-0 border-0 focus:border-0 sm:text-sm [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-cancel-button]:w-4 [&::-webkit-search-cancel-button]:h-4 [&::-webkit-search-cancel-button]:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20fill%3D%22%23fff%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M19%206.41L17.59%205%2012%2010.59%206.41%205%205%206.41%2010.59%2012%205%2017.59%206.41%2019%2012%2013.41%2017.59%2019%2019%2017.59%2013.41%2012z%22%2F%3E%3C%2Fsvg%3E')] [&::-webkit-search-cancel-button]:bg-center [&::-webkit-search-cancel-button]:bg-no-repeat cursor-pointer"
                     placeholder="Search"
                     type="search"
                   />
@@ -79,20 +79,23 @@ export default function Navbar() {
             <div className="ml-3 relative">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                  <Button 
+                    variant="ghost" 
+                    className="flex text-sm rounded-full text-white hover:bg-red-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
                     <span className="sr-only">Open user menu</span>
                     <User className="h-6 w-6" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
-                    <Link href="/profile">Your Profile</Link>
+                <DropdownMenuContent align="end" className="bg-[#3C3C3C] border-0">
+                  <DropdownMenuItem className="hover:bg-red-500 focus:bg-red-500">
+                    <Link href="/profile" className="w-full text-white">Your Profile</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/settings">Settings</Link>
+                  <DropdownMenuItem className="hover:bg-red-500 focus:bg-red-500">
+                    <Link href="/settings" className="w-full text-white">Settings</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/sign-out">Sign out</Link>
+                  <DropdownMenuItem className="hover:bg-red-500 focus:bg-red-500">
+                    <Link href="/sign-out" className="w-full text-white">Sign out</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
