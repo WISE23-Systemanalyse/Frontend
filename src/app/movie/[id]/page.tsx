@@ -2,24 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Card, CardContent } from "@/components/ui/card"
-
-interface Movie {
-  id: number
-  title: string
-  year: number
-  description: string
-  rating: number
-  imageUrl: string
-}
-
-interface Show {
-  id: number
-  movieId: number
-  date: string
-  time: string
-  hall: string
-  price: number
-}
+import { Show, Movie } from "@/types"
 
 export default function MovieDetail() {
   const params = useParams()
@@ -32,7 +15,7 @@ export default function MovieDetail() {
     const fetchMovieAndShows = async () => {
       try {
         // Lade Film-Details
-        const movieResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/movies/${params.id}`)
+        const movieResponse = await fetch(`${process.env.BACKEND_URL}/movies/${params.id}`)
         if (!movieResponse.ok) throw new Error('Film nicht gefunden')
         const movieData = await movieResponse.json()
         setMovie(movieData)
