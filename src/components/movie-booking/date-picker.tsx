@@ -1,7 +1,6 @@
 "use client"
 
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useState } from "react"
 import {
   Select,
   SelectContent,
@@ -11,22 +10,35 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-export default function DatePicker() {
-  const [selectedDate, setSelectedDate] = useState(5)
-  
+interface DatePickerProps {
+  selectedDate: number
+  setSelectedDate: (date: number) => void
+  selectedMonth?: string
+  setSelectedMonth?: (month: string) => void
+}
+
+export default function DatePicker({
+  selectedDate,
+  setSelectedDate,
+  selectedMonth = new Date().toLocaleString('de-DE', { month: 'long' }),
+  setSelectedMonth = () => {}
+}: DatePickerProps) {
+  const months = ["Januar", "Februar", "März", "April", "Mai", "Juni", 
+                  "Juli", "August", "September", "Oktober", "November", "Dezember"]
+
   return (
     <div className="text-center mb-8">
       <div className="flex justify-center items-center mb-4">
-        <Select>
-            <SelectTrigger className="flex items-center text-2xl mb-4 text-center text-white w-[180px] border-none bg-inherit">
-            <SelectValue placeholder={new Date().toLocaleString('de-DE', { month: 'long' })} className="text-center"/>
-            </SelectTrigger>
+        <Select onValueChange={setSelectedMonth} value={selectedMonth}>
+          <SelectTrigger className="flex items-center text-2xl mb-4 text-center text-white w-[180px] border-none bg-inherit">
+            <SelectValue placeholder={selectedMonth} className="text-center"/>
+          </SelectTrigger>
           <SelectContent className='flex items-center justify-center space-x-4'>
             <SelectGroup>
-              {["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"].map((month, index) => (
-            <SelectItem key={month} value={month} className="text-center">
-            {month}
-            </SelectItem>
+              {months.map((month) => (
+                <SelectItem key={month} value={month} className="text-center">
+                  {month}
+                </SelectItem>
               ))}
             </SelectGroup>
           </SelectContent>
@@ -34,7 +46,10 @@ export default function DatePicker() {
       </div>
       <div className="flex justify-center items-center mb-4"></div>
       <div className="flex items-center justify-center space-x-6">
-        <button className="text-white hover:text-red-600">
+        <button 
+          className="text-white hover:text-red-600"
+          onClick={() => setSelectedDate(selectedDate - 1)}
+        >
           <ChevronLeft className="w-6 h-6" />
         </button>
         {Array.from({ length: 5 }, (_, i) => selectedDate - 2 + i).map((date) => (
@@ -43,18 +58,20 @@ export default function DatePicker() {
             onClick={() => setSelectedDate(date)}
             className={`w-12 h-12 rounded-full flex items-center justify-center ${
               selectedDate === date
-          ? "text-red-600 border-b-2 border-red-600"
-          : "text-white"
+                ? "text-red-600 border-b-2 border-red-600"
+                : "text-white"
             }`}
           >
             {date}
           </button>
         ))}
-        <button className="text-white hover:text-red-600">
+        <button 
+          className="text-white hover:text-red-600"
+          onClick={() => setSelectedDate(selectedDate + 1)}
+        >
           <ChevronRight className="w-6 h-6" />
         </button>
       </div>
     </div>
   )
 }
-
