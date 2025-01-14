@@ -142,7 +142,9 @@ export default function CreateMovie() {
           year: new Date(movie.releaseDate).getFullYear(),
           description: movie.description,
           rating: movie.rating,
-          imageUrl: movie.image_url
+          imageUrl: movie.image_url,
+          genres: searchResults.find(result => result.title === movie.title)?.genres.map(g => g.name) || [],
+          duration: movie.duration
         })
       })
 
