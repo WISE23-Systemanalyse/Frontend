@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Card, CardContent } from "@/components/ui/card"
-import { Show, Movie } from "@/types"
+import { Show, Movie } from "@/types/index"
 
 import Header from "@/components/movie-booking/header"
 import DatePicker from "@/components/movie-booking/date-picker"
@@ -79,9 +79,18 @@ export default function MovieDetail() {
             />
           )}
           <div className="flex-1">
-            <DatePicker />
+            {/*<DatePicker />
             <TimePicker />
-            <SeatSelector />
+            <SeatSelector />*/}
+            {shows.map(show => (
+              <Card key={show.id} className="mb-4">
+                <CardContent>
+                  <h2 className="text-xl font-semibold">{show.hall_id}</h2>
+                  <p>{show.movie_id}</p>
+                  <p>{show.start_time}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
     </div>
