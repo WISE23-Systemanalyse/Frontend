@@ -16,7 +16,7 @@ type SeatData = {
   id: number;
   row_number: number;
   seat_number: number;
-  seat_type: 'Standard' | 'Premium';
+  seat_type: 'Standard' | 'Premium' | 'VIP';
 };
 
 export default function MovieDetail() {

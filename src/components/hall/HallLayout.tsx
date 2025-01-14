@@ -145,7 +145,7 @@ export default function HallLayout({ hallId, onSeatSelect }: HallLayoutProps) {
                     : `bg-yellow-500 ${canSelect ? 'hover:bg-yellow-600' : 'opacity-50 cursor-not-allowed'}`
                 }
               `}
-              onClick={() => seat. handleSeatClick(seat)}
+              onClick={() =>  handleSeatClick(seat)}
               title={`Reihe ${seat.row_number}, Platz ${seat.seat_number}`}
             >
               <div className="w-full h-full rounded-t-lg" />
