@@ -25,8 +25,8 @@ export default function UserQuery() {
           <CardTitle className="text-white">Benutzerabfrage</CardTitle>
         </CardHeader>
         <CardContent>
-          <Link href="/admin/createMovie" className="block mb-4">
-            <Button className="w-full bg-red-600 hover:bg-red-700 text-white">Neuen Film anlegen</Button>
+          <Link href="/admin/movies" className="block mb-4">
+            <Button className="w-full bg-red-600 hover:bg-red-700 text-white">Filmverwaltung</Button>
           </Link>
           <Link href="/admin/show" className="block mb-4">
             <Button className="w-full">Neue Vorstellung anlegen</Button>

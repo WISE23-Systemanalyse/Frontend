@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import { ChevronLeft } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Toast } from "@/components/ui/toast"
 
 interface Movie {
   title: string
@@ -70,6 +73,7 @@ const GENRE_MAP: { [key: number]: string } = {
 }
 
 export default function CreateMovie() {
+  const router = useRouter()
   const [movie, setMovie] = useState<Movie>({
     title: '',
     description: '',
@@ -83,6 +87,15 @@ export default function CreateMovie() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [toast, setToast] = useState<{
+    message: string;
+    variant: 'success' | 'error' | 'loading' | 'default';
+    isVisible: boolean;
+  }>({
+    message: '',
+    variant: 'default',
+    isVisible: false
+  })
 
   const searchMovies = async () => {
     if (!searchQuery.trim()) return
@@ -160,10 +173,15 @@ export default function CreateMovie() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    if (!movie) return
 
     try {
+      setToast({
+        message: 'Film wird gespeichert...',
+        variant: 'loading',
+        isVisible: true
+      })
+
       const response = await fetch(`${API_BASE_URL}/movies`, {
         method: 'POST',
         headers: {
@@ -180,26 +198,25 @@ export default function CreateMovie() {
         })
       })
 
-      if (!response.ok) {
-        throw new Error('Film konnte nicht erstellt werden')
-      }
-
-      setMovie({
-        title: '',
-        description: '',
-        duration: 0,
-        releaseDate: '',
-        image_url: '',
-        rating: 0,
-        genres: []
+      if (!response.ok) throw new Error('Film konnte nicht erstellt werden')
+      
+      setToast({
+        message: 'Film wurde erfolgreich erstellt!',
+        variant: 'success',
+        isVisible: true
       })
 
-      alert('Film wurde erfolgreich gespeichert!')
+      setTimeout(() => {
+        router.push('/admin/movies')
+      }, 500)
+      
     } catch (err) {
-      console.error('Fehler beim Speichern:', err)
-      setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten')
-    } finally {
-      setIsLoading(false)
+      setToast({
+        message: err instanceof Error ? err.message : 'Film konnte nicht erstellt werden',
+        variant: 'error',
+        isVisible: true
+      })
+      console.error(err)
     }
   }
 
@@ -211,95 +228,129 @@ export default function CreateMovie() {
   }
 
   return (
-    <div className="flex h-screen w-screen p-4 gap-4" style={{ backgroundColor: '#141414' }}>
-      <div className="max-w-7xl w-[85%] mx-auto flex gap-4">
-        <Card className="w-2/3 bg-[#2C2C2C] border-0">
-          <CardHeader>
-            <CardTitle className="text-white">Neuen Film anlegen</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Input
-                  placeholder="Filmtitel"
-                  value={movie.title}
-                  onChange={(e) => setMovie({...movie, title: e.target.value})}
-                  className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
-                />
-              </div>
-              <div>
-                <Textarea
-                  placeholder="Beschreibung"
-                  value={movie.description}
-                  onChange={(e) => setMovie({...movie, description: e.target.value})}
-                  className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
-                />
-              </div>
-              <div>
-                <Input
-                  type="number"
-                  placeholder="Dauer (in Minuten)"
-                  value={movie.duration || ''}
-                  onChange={(e) => setMovie({...movie, duration: parseInt(e.target.value) || 0})}
-                  className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
-                />
-              </div>
-              <div>
-                <Input
-                  type="date"
-                  value={movie.releaseDate}
-                  onChange={(e) => setMovie({...movie, releaseDate: e.target.value})}
-                  className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
-                />
-              </div>
-              <div>
-                <Input
-                  placeholder="Bild-URL"
-                  value={movie.image_url}
-                  onChange={(e) => setMovie({...movie, image_url: e.target.value})}
-                  className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
-                />
-              </div>
-              <div>
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="10"
-                  placeholder="Bewertung (0-10)"
-                  value={movie.rating}
-                  onChange={(e) => setMovie({...movie, rating: parseFloat(e.target.value)})}
-                  className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex flex-wrap gap-2">
-                  {movie.genres.map((genre, index) => (
-                    <div 
-                      key={index}
-                      className="flex items-center bg-[#3C3C3C] px-3 py-1 rounded-full"
-                    >
-                      <span className="text-white">{genre}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newGenres = movie.genres.filter((_, i) => i !== index)
-                          setMovie({...movie, genres: newGenres})
-                        }}
-                        className="ml-2 text-gray-400 hover:text-white"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
+    <div className="min-h-screen" style={{ backgroundColor: '#141414' }}>
+      <Toast 
+        {...toast} 
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+      />
+      <div className="max-w-[1200px] mx-auto p-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              className="text-gray-400 hover:bg-red-500 transition-colors"
+              onClick={() => router.push('/admin/movies')}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-2xl font-bold text-white">Neuen Film anlegen</h1>
+          </div>
+        </div>
+
+        <div className="flex gap-6">
+          <Card className="flex-1 bg-[#2C2C2C] border-0">
+            <CardHeader>
+              <CardTitle className="text-white">Filminformationen</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
                   <Input
-                    placeholder="Genre hinzufügen"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        const input = e.currentTarget as HTMLInputElement
+                    placeholder="Filmtitel"
+                    value={movie.title}
+                    onChange={(e) => setMovie({...movie, title: e.target.value})}
+                    className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
+                  />
+                </div>
+                <div>
+                  <Textarea
+                    placeholder="Beschreibung"
+                    value={movie.description}
+                    onChange={(e) => setMovie({...movie, description: e.target.value})}
+                    className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
+                  />
+                </div>
+                <div>
+                  <Input
+                    type="number"
+                    placeholder="Dauer (in Minuten)"
+                    value={movie.duration || ''}
+                    onChange={(e) => setMovie({...movie, duration: parseInt(e.target.value) || 0})}
+                    className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
+                  />
+                </div>
+                <div>
+                  <Input
+                    type="date"
+                    value={movie.releaseDate}
+                    onChange={(e) => setMovie({...movie, releaseDate: e.target.value})}
+                    className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
+                  />
+                </div>
+                <div>
+                  <Input
+                    placeholder="Bild-URL"
+                    value={movie.image_url}
+                    onChange={(e) => setMovie({...movie, image_url: e.target.value})}
+                    className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
+                  />
+                </div>
+                <div>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    placeholder="Bewertung (0-10)"
+                    value={movie.rating}
+                    onChange={(e) => setMovie({...movie, rating: parseFloat(e.target.value)})}
+                    className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {movie.genres.map((genre, index) => (
+                      <div 
+                        key={index}
+                        className="flex items-center bg-[#3C3C3C] px-3 py-1 rounded-full"
+                      >
+                        <span className="text-white">{genre}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newGenres = movie.genres.filter((_, i) => i !== index)
+                            setMovie({...movie, genres: newGenres})
+                          }}
+                          className="ml-2 text-gray-400 hover:text-white"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Genre hinzufügen"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const input = e.currentTarget as HTMLInputElement
+                          const newGenre = input.value.trim()
+                          if (newGenre && !movie.genres.includes(newGenre)) {
+                            setMovie({
+                              ...movie,
+                              genres: [...movie.genres, newGenre]
+                            })
+                            input.value = ''
+                          }
+                        }
+                      }}
+                      className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const input = document.querySelector('input[placeholder="Genre hinzufügen"]') as HTMLInputElement
                         const newGenre = input.value.trim()
                         if (newGenre && !movie.genres.includes(newGenre)) {
                           setMovie({
@@ -308,122 +359,107 @@ export default function CreateMovie() {
                           })
                           input.value = ''
                         }
-                      }
-                    }}
+                      }}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+                <Button type="submit" disabled={isLoading} className="bg-red-600 hover:bg-red-700 text-white">
+                  {isLoading ? 'Wird gespeichert...' : 'Film anlegen'}
+                </Button>
+              </form>
+              {error && <p className="text-red-500 mt-4">{error}</p>}
+            </CardContent>
+          </Card>
+
+          <Card className="w-[350px] bg-[#2C2C2C] border-0">
+            <CardHeader>
+              <CardTitle className="text-white">Film suchen</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4">
+                <div className="flex space-x-2">
+                  <Input
+                    placeholder="Film suchen..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    disabled={isLoading}
                     className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
                   />
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const input = document.querySelector('input[placeholder="Genre hinzufügen"]') as HTMLInputElement
-                      const newGenre = input.value.trim()
-                      if (newGenre && !movie.genres.includes(newGenre)) {
-                        setMovie({
-                          ...movie,
-                          genres: [...movie.genres, newGenre]
-                        })
-                        input.value = ''
-                      }
-                    }}
+                  <Button 
+                    onClick={searchMovies} 
+                    disabled={isLoading || !searchQuery.trim()}
                     className="bg-red-600 hover:bg-red-700 text-white"
                   >
-                    +
+                    {isLoading ? <span>Suche...</span> : <span>Suchen</span>}
                   </Button>
                 </div>
-              </div>
-              <Button type="submit" disabled={isLoading} className="bg-red-600 hover:bg-red-700 text-white">
-                {isLoading ? 'Wird gespeichert...' : 'Film anlegen'}
-              </Button>
-            </form>
-            {error && <p className="text-red-500 mt-4">{error}</p>}
-          </CardContent>
-        </Card>
-
-        <Card className="w-1/3 bg-[#2C2C2C] border-0">
-          <CardHeader>
-            <CardTitle className="text-white">Film suchen</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-4">
-              <div className="flex space-x-2">
-                <Input
-                  placeholder="Film suchen..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  disabled={isLoading}
-                  className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
-                />
-                <Button 
-                  onClick={searchMovies} 
-                  disabled={isLoading || !searchQuery.trim()}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  {isLoading ? <span>Suche...</span> : <span>Suchen</span>}
-                </Button>
-              </div>
-              
-              {searchResults.length > 0 && (
-                <div className="max-h-[calc(100vh-300px)] overflow-y-auto border-0 rounded-md bg-[#3C3C3C]">
-                  {searchResults.map((result) => (
-                    <div 
-                      key={result.id}
-                      className="p-4 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-b-0"
-                      onClick={() => selectMovie(result)}
-                    >
-                      <div className="flex gap-3">
-                        {result.poster_path && (
-                          <div className="w-16 min-w-16 h-24 relative">
-                            <img 
-                              src={`https://image.tmdb.org/t/p/w92${result.poster_path}`}
-                              alt={result.title}
-                              className="absolute w-full h-full object-cover rounded"
-                            />
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium text-white">{result.title}</p>
-                              {result.original_title !== result.title && (
-                                <p className="text-sm text-gray-400">
-                                  ({result.original_title})
-                                </p>
-                              )}
+                
+                {searchResults.length > 0 && (
+                  <div className="max-h-[calc(100vh-300px)] overflow-y-auto border-0 rounded-md bg-[#3C3C3C]">
+                    {searchResults.map((result) => (
+                      <div 
+                        key={result.id}
+                        className="p-4 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-b-0"
+                        onClick={() => selectMovie(result)}
+                      >
+                        <div className="flex gap-3">
+                          {result.poster_path && (
+                            <div className="w-16 min-w-16 h-24 relative">
+                              <img 
+                                src={`https://image.tmdb.org/t/p/w92${result.poster_path}`}
+                                alt={result.title}
+                                className="absolute w-full h-full object-cover rounded"
+                              />
                             </div>
-                            <div className="text-sm text-gray-400">
-                              {result.vote_average.toFixed(1)} ⭐
+                          )}
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium text-white">{result.title}</p>
+                                {result.original_title !== result.title && (
+                                  <p className="text-sm text-gray-400">
+                                    ({result.original_title})
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-sm text-gray-400">
+                                {result.vote_average.toFixed(1)} ⭐
+                              </div>
                             </div>
+                            <p className="text-sm text-gray-400">
+                              {result.release_date?.split('-')[0]}
+                              {result.runtime ? ` • ${result.runtime} Min.` : ''}
+                            </p>
+                            <p className="text-sm text-gray-400">
+                              {result.genres.map(g => g.name).join(', ')}
+                            </p>
+                            {result.director && (
+                              <p className="text-sm text-gray-400">
+                                Regie: {result.director}
+                              </p>
+                            )}
+                            {result.cast.length > 0 && (
+                              <p className="text-sm text-gray-400">
+                                Cast: {result.cast.join(', ')}
+                              </p>
+                            )}
+                            <p className="text-sm text-gray-400 line-clamp-2 mt-1">
+                              {result.overview}
+                            </p>
                           </div>
-                          <p className="text-sm text-gray-400">
-                            {result.release_date?.split('-')[0]}
-                            {result.runtime ? ` • ${result.runtime} Min.` : ''}
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            {result.genres.map(g => g.name).join(', ')}
-                          </p>
-                          {result.director && (
-                            <p className="text-sm text-gray-400">
-                              Regie: {result.director}
-                            </p>
-                          )}
-                          {result.cast.length > 0 && (
-                            <p className="text-sm text-gray-400">
-                              Cast: {result.cast.join(', ')}
-                            </p>
-                          )}
-                          <p className="text-sm text-gray-400 line-clamp-2 mt-1">
-                            {result.overview}
-                          </p>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
