@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { Toast } from "@/components/ui/toast"
+import { useParams } from 'next/navigation'
 
 interface Movie {
   id: string | number
@@ -21,11 +22,11 @@ interface Movie {
 
 const API_BASE_URL = process.env.BACKEND_URL
 
-export default function EditMovie({ params }: { params: { id: string } }) {
+export default function EditMovie() {
   const router = useRouter()
-  const movieId = use(params).id
+  const movieId = useParams().id
   const [movie, setMovie] = useState<Movie | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [toast, setToast] = useState<{
     message: string;
