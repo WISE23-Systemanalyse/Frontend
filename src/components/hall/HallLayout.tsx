@@ -125,15 +125,16 @@ export default function HallLayout({ hallId, onSeatSelect }: HallLayoutProps) {
           const row = Math.floor(idx / cols) + 1;
           const col = (idx % cols) + 1;
           const seat = seats.find(s => s.row_number === row && s.seat_number === col);
+          const uniqueKey = `${row}-${col}`; // Create unique key from row and column
 
-          if (!seat) return <div key={idx} className="aspect-square"></div>;
+          if (!seat) return <div key={uniqueKey} className="aspect-square"></div>;
 
           const isSelected = isSeatSelected(seat.id);
           const canSelect = isAdjacent(seat) || selectedSeats.length === 0;
 
           return (
             <div
-              key={seat.id}
+              key={uniqueKey}
               className={`
                 aspect-square w-8 h-8 
                 flex items-center justify-center
@@ -145,7 +146,7 @@ export default function HallLayout({ hallId, onSeatSelect }: HallLayoutProps) {
                     : `bg-yellow-500 ${canSelect ? 'hover:bg-yellow-600' : 'opacity-50 cursor-not-allowed'}`
                 }
               `}
-              onClick={() =>  handleSeatClick(seat)}
+              onClick={() => handleSeatClick(seat)}
               title={`Reihe ${seat.row_number}, Platz ${seat.seat_number}`}
             >
               <div className="w-full h-full rounded-t-lg" />
