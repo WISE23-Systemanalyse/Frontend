@@ -13,6 +13,7 @@ interface Movie {
   releaseDate: string
   image_url: string
   rating: number
+  genres: string[]
 }
 
 interface SearchResult {
@@ -46,6 +47,28 @@ interface TMDBSearchResult {
 
 const API_BASE_URL = process.env.BACKEND_URL
 
+const GENRE_MAP: { [key: number]: string } = {
+  28: "Action",
+  12: "Adventure",
+  16: "Animation",
+  35: "Comedy",
+  80: "Crime",
+  99: "Documentary",
+  18: "Drama",
+  10751: "Family",
+  14: "Fantasy",
+  36: "History",
+  27: "Horror",
+  10402: "Music",
+  9648: "Mystery",
+  10749: "Romance",
+  878: "Science Fiction",
+  10770: "TV Movie",
+  53: "Thriller",
+  10752: "War",
+  37: "Western"
+}
+
 export default function CreateMovie() {
   const [movie, setMovie] = useState<Movie>({
     title: '',
@@ -53,7 +76,8 @@ export default function CreateMovie() {
     duration: 0,
     releaseDate: '',
     image_url: '',
-    rating: 0
+    rating: 0,
+    genres: []
   })
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
@@ -67,7 +91,6 @@ export default function CreateMovie() {
     setError(null)
     
     try {
-      // Neue API-Route verwenden
       const searchResponse = await fetch(
         `${API_BASE_URL}/movies/tmdb/search?query=${encodeURIComponent(searchQuery)}`,
         {
@@ -77,6 +100,10 @@ export default function CreateMovie() {
         }
       )
       
+      if (!searchResponse.ok) {
+        throw new Error('Fehler bei der Filmsuche')
+      }
+
       const searchResults = await searchResponse.json()
       console.log('Suchergebnisse:', searchResults)
 
@@ -86,20 +113,19 @@ export default function CreateMovie() {
         return
       }
 
-      // Direkt die Ergebnisse setzen, da die Details bereits enthalten sind
       const mappedResults = searchResults.map((movie: TMDBSearchResult) => ({
         id: movie.id,
         title: movie.title,
         original_title: movie.original_title,
         overview: movie.overview,
         release_date: movie.release_date,
-        runtime: movie.runtime || 0,
+        runtime: movie.runtime,
         poster_path: movie.poster_path,
         backdrop_path: movie.backdrop_path,
         vote_average: movie.vote_average,
-        genres: movie.genre_ids.map(id => ({ id, name: '' })), // Genres werden später angepasst
-        director: '', // Optional: Könnte über einen zusätzlichen API-Call geholt werden
-        cast: [], // Optional: Könnte über einen zusätzlichen API-Call geholt werden
+        genres: movie.genre_ids.map(id => ({ id, name: '' })),
+        director: '',
+        cast: [],
         production_countries: []
       }))
 
@@ -115,13 +141,18 @@ export default function CreateMovie() {
   }
 
   const selectMovie = (result: SearchResult) => {
+    const genres = result.genres
+      .map(genre => GENRE_MAP[genre.id])
+      .filter(name => name !== undefined)
+
     setMovie({
       title: result.title,
       description: result.overview,
       duration: result.runtime || 0,
       releaseDate: result.release_date,
       image_url: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : '',
-      rating: result.vote_average
+      rating: Number(result.vote_average.toFixed(1)),
+      genres: genres
     })
     setSearchResults([])
     setSearchQuery('')
@@ -143,7 +174,9 @@ export default function CreateMovie() {
           year: new Date(movie.releaseDate).getFullYear(),
           description: movie.description,
           rating: movie.rating,
-          imageUrl: movie.image_url
+          imageUrl: movie.image_url,
+          genres: movie.genres,
+          duration: movie.duration
         })
       })
 
@@ -157,7 +190,8 @@ export default function CreateMovie() {
         duration: 0,
         releaseDate: '',
         image_url: '',
-        rating: 0
+        rating: 0,
+        genres: []
       })
 
       alert('Film wurde erfolgreich gespeichert!')
@@ -205,8 +239,8 @@ export default function CreateMovie() {
                 <Input
                   type="number"
                   placeholder="Dauer (in Minuten)"
-                  value={movie.duration}
-                  onChange={(e) => setMovie({...movie, duration: parseInt(e.target.value)})}
+                  value={movie.duration || ''}
+                  onChange={(e) => setMovie({...movie, duration: parseInt(e.target.value) || 0})}
                   className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
                 />
               </div>
@@ -237,6 +271,65 @@ export default function CreateMovie() {
                   onChange={(e) => setMovie({...movie, rating: parseFloat(e.target.value)})}
                   className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
                 />
+              </div>
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {movie.genres.map((genre, index) => (
+                    <div 
+                      key={index}
+                      className="flex items-center bg-[#3C3C3C] px-3 py-1 rounded-full"
+                    >
+                      <span className="text-white">{genre}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newGenres = movie.genres.filter((_, i) => i !== index)
+                          setMovie({...movie, genres: newGenres})
+                        }}
+                        className="ml-2 text-gray-400 hover:text-white"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Genre hinzufügen"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        const input = e.currentTarget as HTMLInputElement
+                        const newGenre = input.value.trim()
+                        if (newGenre && !movie.genres.includes(newGenre)) {
+                          setMovie({
+                            ...movie,
+                            genres: [...movie.genres, newGenre]
+                          })
+                          input.value = ''
+                        }
+                      }
+                    }}
+                    className="bg-[#3C3C3C] text-white border-0 focus:ring-0 placeholder:text-gray-400"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const input = document.querySelector('input[placeholder="Genre hinzufügen"]') as HTMLInputElement
+                      const newGenre = input.value.trim()
+                      if (newGenre && !movie.genres.includes(newGenre)) {
+                        setMovie({
+                          ...movie,
+                          genres: [...movie.genres, newGenre]
+                        })
+                        input.value = ''
+                      }
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    +
+                  </Button>
+                </div>
               </div>
               <Button type="submit" disabled={isLoading} className="bg-red-600 hover:bg-red-700 text-white">
                 {isLoading ? 'Wird gespeichert...' : 'Film anlegen'}
@@ -303,7 +396,8 @@ export default function CreateMovie() {
                             </div>
                           </div>
                           <p className="text-sm text-gray-400">
-                            {result.release_date?.split('-')[0]} • {result.runtime} Min.
+                            {result.release_date?.split('-')[0]}
+                            {result.runtime ? ` • ${result.runtime} Min.` : ''}
                           </p>
                           <p className="text-sm text-gray-400">
                             {result.genres.map(g => g.name).join(', ')}
