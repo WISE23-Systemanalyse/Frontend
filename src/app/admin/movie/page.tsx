@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client'
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
@@ -241,7 +242,7 @@ export default function CreateMovie() {
                 {isLoading ? 'Wird gespeichert...' : 'Film anlegen'}
               </Button>
             </form>
-            {error && <p className="text-red-500 mt-4 text-white">{error}</p>}
+            {error && <p className="text-red-500 mt-4">{error}</p>}
           </CardContent>
         </Card>
 
