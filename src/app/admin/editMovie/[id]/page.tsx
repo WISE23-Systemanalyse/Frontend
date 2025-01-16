@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,9 +21,13 @@ interface Movie {
 
 const API_BASE_URL = process.env.BACKEND_URL
 
-export default function EditMovie({ params }: { params: { id: string } }) {
+export default function EditMoviePage({
+  params,
+}: {
+  params: { id: string }
+}) {
   const router = useRouter()
-  const movieId = use(params).id
+  const movieId = params.id
   const [movie, setMovie] = useState<Movie | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
