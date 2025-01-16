@@ -1,11 +1,11 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Toast } from "@/components/ui/toast"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import Image from 'next/image'
 
 interface Movie {
   id: string
@@ -135,15 +135,14 @@ export default function MoviesOverview() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {movies.map(movie => (
               <div key={movie.id} className="group relative">
-                <Image
-                  src={movie.imageUrl}
-                  alt={movie.title}
-                  width={500}
-                  height={750}
-                  layout="responsive"
-                  className="h-full w-full object-cover transition-all duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="aspect-[2/3] overflow-hidden rounded-md">
+                  <img 
+                    src={movie.imageUrl} 
+                    alt={movie.title}
+                    className="h-full w-full object-cover transition-all duration-300 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                </div>
                 
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 rounded-md">
