@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { Toast } from "@/components/ui/toast"
+import { useParams } from 'next/navigation'
+import Image from 'next/image'
 
 interface Movie {
   id: string | number
@@ -21,15 +23,11 @@ interface Movie {
 
 const API_BASE_URL = process.env.BACKEND_URL
 
-export default function EditMoviePage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default function EditMovie() {
   const router = useRouter()
-  const movieId = params.id
+  const movieId = useParams().id
   const [movie, setMovie] = useState<Movie | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [toast, setToast] = useState<{
     message: string;
@@ -42,20 +40,20 @@ export default function EditMoviePage({
   })
 
   useEffect(() => {
-    fetchMovie()
-  }, [])
-
-  const fetchMovie = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/movies/${movieId}`)
-      if (!response.ok) throw new Error('Film konnte nicht geladen werden')
-      const data = await response.json()
-      setMovie(data)
-    } catch (err) {
-      setError('Film konnte nicht geladen werden')
-      console.error(err)
+    const fetchMovie = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/movies/${movieId}`)
+        if (!response.ok) throw new Error('Film konnte nicht geladen werden')
+        const data = await response.json()
+        setMovie(data)
+      } catch (err) {
+        setError('Film konnte nicht geladen werden')
+        console.error(err)
+      }
     }
-  }
+
+    fetchMovie()
+  }, [movieId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -275,9 +273,12 @@ export default function EditMoviePage({
             </CardHeader>
             <CardContent>
               <div className="aspect-[2/3] relative mb-4 overflow-hidden rounded-md">
-                <img 
-                  src={movie.imageUrl} 
+                <Image
+                  src={movie.imageUrl}
                   alt={movie.title}
+                  width={500}
+                  height={750}
+                  layout="responsive"
                   className="absolute inset-0 w-full h-full object-cover"
                 />
               </div>

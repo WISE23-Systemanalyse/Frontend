@@ -34,7 +34,7 @@ export default function RootLayout({
         <Navbar />
         {children}
         <Footer/>
-        <Toast />
+        <Toast isVisible={false} message="test" />
       </body>
     </html>
   );
