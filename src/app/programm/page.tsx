@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { fetchShows } from './fetchdata'
+import Image from 'next/image'
 
 interface Show {
     id: number;
@@ -49,9 +50,12 @@ export default function ShowList(){
       <CardHeader className="space-y-2">
         {showtime.image_url && (
           <div className="w-full h-48 overflow-hidden rounded-t-lg">
-            <img 
-              src={showtime.image_url} 
-              alt={showtime.title} 
+            <Image
+              src={showtime.image_url}
+              alt={showtime.title}
+              width={500}
+              height={750}
+              layout="responsive"
               className="w-full h-full object-cover"
             />
           </div>
