@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
     env: {
-        BACKEND_URL: "api.kts.testcode.tools"
+        BACKEND_URL: "https://api.kts.testcode.tools/"
     },
     images: {
         remotePatterns: [
