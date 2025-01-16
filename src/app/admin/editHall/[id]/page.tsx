@@ -50,25 +50,23 @@ export default function EditHall() {
   })
 
   useEffect(() => {
-    if (hallId) {
-      fetchHall()
-    }
-  }, [hallId])
+    const fetchHall = async () => {
+      if (!API_BASE_URL) return
 
-  const fetchHall = async () => {
-    if (!API_BASE_URL) return
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/halls/${hallId}`)
-      if (!response.ok) throw new Error('Saal konnte nicht geladen werden')
-      const data = await response.json()
-      setHall(data)
-      setSelectedSeats(data.seats || [])
-    } catch (err) {
-      setError('Saal konnte nicht geladen werden')
-      console.error(err)
+      try {
+        const response = await fetch(`${API_BASE_URL}/halls/${hallId}`)
+        if (!response.ok) throw new Error('Saal konnte nicht geladen werden')
+        const data = await response.json()
+        setHall(data)
+        setSelectedSeats(data.seats || [])
+      } catch (err) {
+        setError('Saal konnte nicht geladen werden')
+        console.error(err)
+      }
     }
-  }
+
+    fetchHall()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
