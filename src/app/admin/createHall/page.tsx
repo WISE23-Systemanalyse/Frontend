@@ -16,6 +16,13 @@ interface Seat {
   seat_type: string;
 }
 
+interface NewSeat {
+  hall_id: number;
+  row_number: number;
+  seat_number: number;
+  seat_type: string;
+}
+
 const API_BASE_URL = process.env.BACKEND_URL;
 
 // Initialisiere 5 Reihen mit je 10 Sitzen

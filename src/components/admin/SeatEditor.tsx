@@ -24,16 +24,16 @@ const MAX_ROWS = 15
 const MAX_SEATS_PER_ROW = 20
 
 const SEAT_TYPE = {
-  NONE: 'None',      // Kein Sitz/Gang
-  STANDARD: 'Standard',
-  PREMIUM: 'Premium',
+  NONE: 'NONE',      // Kein Sitz/Gang
+  STANDARD: 'STANDARD',
+  PREMIUM: 'PREMIUM',
   VIP: 'VIP'
 } as const
 
 export function SeatEditor({ seats, onChange, hallId }: SeatEditorProps) {
   const [rows, setRows] = useState(5)
   const [seatsPerRow, setSeatsPerRow] = useState(15)
-  const [selectedCategory, setSelectedCategory] = useState(SEAT_TYPE.STANDARD)
+  const [selectedCategory, setSelectedCategory] = useState<keyof typeof SEAT_TYPE>(SEAT_TYPE.STANDARD)
   const [isDrawing, setIsDrawing] = useState(false)
   const [noneSeats, setNoneSeats] = useState<Set<string>>(new Set())
   const [isInitialized, setIsInitialized] = useState(false)
@@ -73,8 +73,8 @@ export function SeatEditor({ seats, onChange, hallId }: SeatEditorProps) {
       const hallSeats = data.filter((seat: Seat) => seat.hall_id === hallId)
       
       if (hallSeats.length > 0) {
-        const maxRow = Math.max(...hallSeats.map(seat => seat.row_number))
-        const maxSeatsInRow = Math.max(...hallSeats.map(seat => seat.seat_number))
+        const maxRow = Math.max(...hallSeats.map((seat: Seat) => seat.row_number))
+        const maxSeatsInRow = Math.max(...hallSeats.map((seat: Seat) => seat.seat_number))
         setRows(maxRow)
         setSeatsPerRow(maxSeatsInRow)
 
@@ -89,7 +89,7 @@ export function SeatEditor({ seats, onChange, hallId }: SeatEditorProps) {
         }
 
         // Entferne dann die Positionen, an denen tatsächlich Sitze sind
-        hallSeats.forEach(seat => {
+        hallSeats.forEach((seat: Seat) => {
           if (seat.seat_type !== SEAT_TYPE.NONE) {
             nonePositions.delete(`${seat.row_number}-${seat.seat_number}`)
           }
@@ -99,7 +99,7 @@ export function SeatEditor({ seats, onChange, hallId }: SeatEditorProps) {
       }
 
       // Filtere NONE-Sitze aus der Liste heraus
-      onChange(hallSeats.filter(seat => seat.seat_type !== SEAT_TYPE.NONE))
+      onChange(hallSeats.filter((seat: Seat) => seat.seat_type !== SEAT_TYPE.NONE))
     } catch (error) {
       console.error('Fehler beim Laden der Sitze:', error)
     }
