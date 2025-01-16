@@ -1,7 +1,8 @@
 export type Show = {
-  id: number
+  show_id: number
   movie_id: number
   hall_id: number
+  hall_name: string
   start_time: string
 }
 

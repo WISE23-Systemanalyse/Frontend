@@ -1,162 +1,175 @@
-'use client'
+"use client";
+import React, { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Show, Movie, Seat } from "@/types/index";
+import DatePicker from "@/components/movie-booking/date-picker";
+import TimePicker from "@/components/movie-booking/time-picker";
+import MovieInfo from "@/components/movie-booking/movie-info";
+import { HallLayout } from "@/components/hall/HallLayout";
+import { Card, CardContent } from "@/components/ui/card";
 
-import React, { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation'
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Show, Movie } from "@/types/index"
-import { TimeSlot } from "@/types/index"
-
-import DatePicker from "@/components/movie-booking/date-picker"
-import TimePicker from "@/components/movie-booking/time-picker"
-import MovieInfo from "@/components/movie-booking/movie-info"
-import HallLayout from '@/components/hall/HallLayout'
-
-type SeatData = {
-  id: number;
-  row_number: number;
-  seat_number: number;
-  seat_type: 'Standard' | 'Premium';
-};
 
 export default function MovieDetail() {
-  const params = useParams()
-  const router = useRouter()
-  const [movie, setMovie] = useState<Movie | null>(null)
-  const [shows, setShows] = useState<Show[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedDate, setSelectedDate] = useState(new Date().getDate())
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toLocaleString('de-DE', { month: 'long' }))
-  const [selectedShowId, setSelectedShowId] = useState<number | undefined>()
-  const [selectedHallId, setSelectedHallId] = useState<number>(5) // Default hall ID is 5
-  const [selectedSeats, setSelectedSeats] = useState<SeatData[]>([])
+  const params = useParams();
+  const router = useRouter();
+  const [movie, setMovie] = useState<Movie | null>(null);
+  const [shows, setShows] = useState<Show[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [error, setError] = useState<string | null>(null);
 
-  // Handle show and hall selection
+  const [selectedDate, setSelectedDate] = useState(new Date().getDate());
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().toLocaleString("de-DE", { month: "long" })
+  );
+  const [selectedShowId, setSelectedShowId] = useState<number>(0);
+  const [selectedHallId, setSelectedHallId] = useState<number>(2);
+  const [selectedSeats,  setSelectedSeats] = useState<Seat[]>([]);
+
+  // Event handlers
   const handleShowSelect = (showId: number, hallId: number) => {
-    setSelectedShowId(showId)
-    setSelectedHallId(hallId)
-  }
-
-  // Handle checkout
+    console.log(showId, hallId);
+    setSelectedShowId(showId);
+    setSelectedHallId(hallId);
+  };
   const handleCheckout = () => {
     if (selectedShowId) {
-      router.push(`/checkout/${selectedShowId}`)
+      router.push(`/checkout/${selectedShowId}`);
     }
-  }
+  };
 
+  // Data fetching
   React.useEffect(() => {
     const fetchMovieAndShows = async () => {
       try {
-        const movieResponse = await fetch(`${process.env.BACKEND_URL}/movies/${params.id}`)
-        if (!movieResponse.ok) throw new Error('Film nicht gefunden')
-        const movieData = await movieResponse.json()
-        setMovie(movieData)
+        const movieResponse = await fetch(
+          `${process.env.BACKEND_URL}/movies/${params.id}`
+        );
+        if (!movieResponse.ok) throw new Error("Film nicht gefunden");
+        const movieData = await movieResponse.json();
+        setMovie(movieData);
 
-        const showsResponse = await fetch(`${process.env.BACKEND_URL}/movies/${params.id}/shows`)
-        if (!showsResponse.ok) throw new Error('Keine Vorstellungen gefunden')
-        const showsData = await showsResponse.json()
-        setShows(showsData)
+        const showsResponse = await fetch(
+          `${process.env.BACKEND_URL}/movies/${params.id}/shows`
+        );
+        if (!showsResponse.ok) throw new Error("Keine Vorstellungen gefunden");
+        const showsData = await showsResponse.json();
+        setShows(showsData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten')
+        setError(
+          err instanceof Error ? err.message : "Ein Fehler ist aufgetreten"
+        );
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchMovieAndShows()
-  }, [params.id])
+    fetchMovieAndShows();
+  }, [params.id]);
 
-  // Reset only show selection when date changes, keep hall visible
   React.useEffect(() => {
-    setSelectedShowId(undefined)
-  }, [selectedDate, selectedMonth])
+    setSelectedShowId(undefined);
+  }, [selectedDate, selectedMonth]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#141414] p-8">
-        <div className="max-w-7xl w-[85%] mx-auto">
-          <p className="text-white">Lädt...</p>
+      <div className="min-h-screen bg-neutral-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse flex space-x-4">
+            <div className="flex-1 space-y-4 py-1">
+              <div className="h-4 bg-neutral-800 rounded w-3/4"></div>
+              <div className="space-y-2">
+                <div className="h-4 bg-neutral-800 rounded"></div>
+                <div className="h-4 bg-neutral-800 rounded w-5/6"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error || !movie) {
     return (
-      <div className="min-h-screen bg-[#141414] p-8">
-        <div className="max-w-7xl w-[85%] mx-auto">
-          <p className="text-red-500">{error || 'Film nicht gefunden'}</p>
-        </div>
-      </div>
-    )
-  }
-
-  const selectedShow = shows.find(show => show.id === selectedShowId)
-  const showDateTime = selectedShow ? new Date(selectedShow.start_time) : null
-
-  return (
-    <div className="min-h-screen bg-[#141414] p-8">
-      <div className="flex flex-col lg:flex-row gap-8">
-        <MovieInfo
-          id={movie.id}
-          title={movie.title}
-          description={movie.description}
-          rating={movie.rating}
-          genres={movie.genres}
-          duration={movie.duration}
-          imageUrl={movie.imageUrl}
-          year={movie.year}
-        />
-        <div className="flex-1">
-          <DatePicker
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            selectedMonth={selectedMonth}
-            setSelectedMonth={setSelectedMonth}
-          />
-          <TimePicker
-            shows={shows}
-            selectedDate={selectedDate}
-            selectedMonth={selectedMonth}
-            onShowSelect={handleShowSelect}
-            selectedShowId={selectedShowId}
-          />
-          <div className="mt-6">
-            <HallLayout 
-              hallId={selectedHallId} 
-              onSeatSelect={(seats) => setSelectedSeats(seats)}
-            />
-            {selectedShowId && (
-              <div className="mt-6">
-                <div className="bg-neutral-800 p-4 rounded-lg mb-4">
-                  <h3 className="text-white font-semibold mb-2">Ausgewählte Vorstellung:</h3>
-                  <p className="text-neutral-300">
-                    {showDateTime?.toLocaleString('de-DE', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                  <p className="text-neutral-300">Saal {selectedHallId}</p>
-                  <p className="text-neutral-300">Ausgewählte Sitze: {selectedSeats.length}</p>
-                </div>
-                <Button 
-                  onClick={handleCheckout}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={selectedSeats.length === 0}
-                >
-                  Zur Kasse
-                </Button>
-              </div>
-            )}
+      <div className="min-h-screen bg-neutral-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-900/20 border border-red-900 rounded-lg p-4">
+            <p className="text-red-500">{error || "Film nicht gefunden"}</p>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
+    );
+  }
 
+  return (
+    <div className="min-h-screen bg-neutral-900 p-4">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Movie Information Section */}
+        <Card className="bg-neutral-800/50 border-neutral-700">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1">
+                <MovieInfo
+                  id={movie.id}
+                  title={movie.title}
+                  description={movie.description}
+                  rating={movie.rating}
+                  genres={movie.genres}
+                  duration={movie.duration}
+                  imageUrl={movie.imageUrl}
+                  year={movie.year}
+                />
+              </div>
+              
+              <div className="lg:col-span-2 space-y-6">
+                {/* Booking Section */}
+                <div className="space-y-6">
+                  <div className="bg-neutral-800 rounded-lg p-4">
+                    <h2 className="text-xl font-semibold text-white mb-4">Vorstellung wählen</h2>
+                    <DatePicker
+                      selectedDate={selectedDate}
+                      setSelectedDate={setSelectedDate}
+                      selectedMonth={selectedMonth}
+                      setSelectedMonth={setSelectedMonth}
+                    />
+                  </div>
+
+                  <div className="bg-neutral-800 rounded-lg p-4">
+                    <h2 className="text-xl font-semibold text-white mb-4">Verfügbare Zeiten</h2>
+                    <TimePicker
+                      shows={shows}
+                      selectedDate={selectedDate}
+                      selectedMonth={selectedMonth}
+                      onShowSelect={handleShowSelect}
+                      selectedShowId={selectedShowId}
+                    />
+                  </div>
+                </div>
+
+                {/* Seat Selection */}
+                {selectedHallId && (
+                  <div className="bg-neutral-800 rounded-lg p-4">
+                    <h2 className="text-xl font-semibold text-white mb-4">Sitzplatz wählen</h2>
+                    <HallLayout hallID={selectedHallId} onSeatSelect={(seats) => setSelectedSeats(seats)} />
+                  </div>
+                )}
+
+                {/* Checkout Button */}
+                {selectedShowId && selectedSeats.length > -2 && (
+                  <div className="flex justify-center">
+                    <button
+                      onClick={handleCheckout}
+                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors"
+                    >
+                      Buchen
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

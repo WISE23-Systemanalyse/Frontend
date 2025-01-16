@@ -1,62 +1,47 @@
-'use client';
-import { useEffect, useState } from 'react';
-
-type SeatData = {
-  id: number;
-  hall_id: number;
-  row_number: number;
-  seat_number: number;
-  seat_type: 'Standard' | 'VIP';
-};
-
+'use client'
+import { Square, Armchair, Crown, Ban } from 'lucide-react'
+import { Seat } from '@/types/index'
+import { useEffect, useState } from 'react'
 interface HallLayoutProps {
-  hallId: number;
-  onSeatSelect: (selectedSeats: SeatData[]) => void;
+  hallID: number;
+  onSeatSelect: (selectedSeats: Seat[]) => void;
 }
 
-export default function HallLayout({ hallId, onSeatSelect }: HallLayoutProps) {
-  const [seats, setSeats] = useState<SeatData[]>([]);
-  const [rows, setRows] = useState(0);
-  const [cols, setCols] = useState(0);
-  const [selectedSeats, setSelectedSeats] = useState<SeatData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
+export function HallLayout({ hallID, onSeatSelect }: HallLayoutProps) {
+  // Calculate dimensions based on seats
+  const [seats, setSeats] = useState<Seat[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [selectedSeats, setSelectedSeats] = useState<Seat[]>([])
+  
+
+  const fetchSeats = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch(`${process.env.BACKEND_URL}/halls/${hallID}/seats`)
+      const data = await response.json()
+      console.log(data) 
+      setSeats(data)
+      setIsLoading(false)
+    } catch (err) {
+      console.error(err)
+      setIsLoading(false)
+    }
+  }
   useEffect(() => {
-    const fetchSeats = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`${process.env.BACKEND_URL}/seats/halls/${hallId}`);
-        if (!response.ok) throw new Error('Fehler beim Laden der Sitze');
-        const data: SeatData[] = await response.json();
-        setSeats(data);
-
-        const maxRow = Math.max(...data.map(seat => seat.row_number));
-        const maxCol = Math.max(...data.map(seat => seat.seat_number));
-        setRows(maxRow);
-        setCols(maxCol);
-      } catch (error) {
-        console.error('Error fetching seats:', error);
-        setError('Fehler beim Laden der Sitze. Bitte versuchen Sie es später erneut.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchSeats();
-  }, [hallId]);
+  }, [hallID])
+  const rows = seats.length ? Math.max(...seats.map(seat => seat.row_number)) : 0
+  const seatsPerRow = seats.length ? Math.max(...seats.map(seat => seat.seat_number)) : 0
 
-  const isAdjacent = (seat: SeatData) => {
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64">Loading...</div>
+  }
+
+  const isAdjacent = (seat: Seat) => {
     if (selectedSeats.length === 0) return true;
-    
-    return selectedSeats.some(selected => 
-      selected.row_number === seat.row_number && 
-      Math.abs(selected.seat_number - seat.seat_number) === 1
-    );
-  };
-
-  const handleSeatClick = (seat: SeatData) => {
+  }
+  const handleSeatClick = (seat: Seat) => {
     if (selectedSeats.find(s => s.id === seat.id)) {
       // If the seat is already selected, we're deselecting it
       let newSelection = selectedSeats.filter(s => s.id !== seat.id);
@@ -79,6 +64,7 @@ export default function HallLayout({ hallId, onSeatSelect }: HallLayoutProps) {
       
       setSelectedSeats(newSelection);
       onSeatSelect(newSelection);
+      
     } else if (isAdjacent(seat) || selectedSeats.length === 0) {
       // Adding a new seat (existing logic)
       const newSelection = [...selectedSeats, seat].sort((a, b) => 
@@ -97,77 +83,98 @@ export default function HallLayout({ hallId, onSeatSelect }: HallLayoutProps) {
     return selectedSeats.some(s => s.id === seatId);
   };
 
-  if (isLoading) {
-    return <div className="text-white">Lädt Sitzplan...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500">{error}</div>;
-  }
-
-  if (seats.length === 0) {
-    return <div className="text-white">Keine Sitze verfügbar.</div>;
-  }
-
   return (
-    <div className="rounded-lg shadow-lg p-6">
-      <h1 className="text-2xl font-bold mb-6 text-center text-white">Kino {hallId}</h1>
-      <div className="w-full h-8 bg-gray-300 rounded-t-lg mb-8 text-center">Leinwand</div>
-      <div
-        className="grid gap-1 mx-auto"
-        style={{ 
-          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-          maxWidth: `${cols * 3}rem`,
-          transform: 'perspective(1000px) rotateX(10deg)'
-        }}
-      >
-        {Array.from({ length: rows * cols }, (_, idx) => {
-          const row = Math.floor(idx / cols) + 1;
-          const col = (idx % cols) + 1;
-          const seat = seats.find(s => s.row_number === row && s.seat_number === col);
+    <div className="space-y-6">
+      <div className="relative">
+        <div className="relative mb-6">
+          <div className="w-full h-8 bg-red-600 flex items-center justify-center">
+            <span className="text-white text-sm font-medium">
+              LEINWAND
+            </span>
+          </div>
+        </div>
 
-          if (!seat) return <div key={idx} className="aspect-square"></div>;
+        <div className="flex justify-between mb-2 px-1">
+          {Array.from({ length: seatsPerRow }).map((_, i) => (
+            <span key={i} className="text-xs text-neutral-500 w-8 text-center">
+              {i + 1}
+            </span>
+          ))}
+        </div>
 
-          const isSelected = isSeatSelected(seat.id);
-          const canSelect = isAdjacent(seat) || selectedSeats.length === 0;
+        <div className="flex">
+          <div className="flex flex-col justify-between pr-2 py-1">
+            {Array.from({ length: rows }).map((_, i) => (
+              <span key={i} className="text-xs text-neutral-500 h-8 flex items-center">
+                {i + 1}
+              </span>
+            ))}
+          </div>
 
-          return (
-            <div
-              key={seat.id}
-              className={`
-                aspect-square w-8 h-8 
-                flex items-center justify-center
-                rounded-t-lg cursor-pointer transition-all duration-200
-                ${isSelected 
-                  ? 'bg-green-500 hover:bg-green-600 scale-110' 
-                  : seat.seat_type === 'Standard'
-                    ? `bg-blue-500 ${canSelect ? 'hover:bg-blue-600' : 'opacity-50 cursor-not-allowed'}`
-                    : `bg-yellow-500 ${canSelect ? 'hover:bg-yellow-600' : 'opacity-50 cursor-not-allowed'}`
-                }
-              `}
-              onClick={() => seat. handleSeatClick(seat)}
-              title={`Reihe ${seat.row_number}, Platz ${seat.seat_number}`}
-            >
-              <div className="w-full h-full rounded-t-lg" />
+          <div 
+            className="grid gap-2 flex-1" 
+            style={{ gridTemplateColumns: `repeat(${seatsPerRow}, minmax(0, 1fr))` }}
+          >
+            { rows*seatsPerRow > 0 && Array.from({ length: rows * seatsPerRow }).map((_, index) => {
+              const row = Math.floor(index / seatsPerRow) + 1
+              const seatNum = (index % seatsPerRow) + 1
+              const seat = seats.find(s => s.row_number === row && s.seat_number === seatNum)
+
+              if (!seat || seat.seat_type === 'NONE') {
+                return <div key={index} className="aspect-square rounded-md opacity-10" />
+              }
+
+              return (
+                <div
+                  key={index}
+                  onClick={() => handleSeatClick(seat)}
+                  className={`
+                    aspect-square rounded-md flex items-center justify-center
+                    ${seat.seat_type === "STANDARD" ? 'bg-emerald-600' : ''}
+                    ${seat.seat_type === 'PREMIUM' ? 'bg-blue-600' : ''}
+                    ${seat.seat_type === "VIP" ? 'bg-purple-600' : ''}
+                    ${isSeatSelected(seat.id) ? 'border-red-700' : ''}
+                    
+                  `}
+                  title={`Reihe ${row}, Sitz ${seatNum} (${seat.seat_type})`}
+                >
+                  {seat.seat_type === 'STANDARD' && <Square size={12} className="text-white" />}
+                  {seat.seat_type === 'PREMIUM' && <Armchair size={14} className="text-white" />}
+                  {seat.seat_type === 'VIP' && <Crown size={14} className="text-white" />}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="flex gap-6 justify-center mt-8">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-emerald-600 rounded flex items-center justify-center">
+              <Square size={12} className="text-white" />
             </div>
-          );
-        })}
-      </div>
-      <div className="mt-8 flex justify-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 rounded-t-lg" />
-          <span className="text-white">Standard</span>
+            <span className="text-gray-400">Standard</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+              <Armchair size={14} className="text-white" />
+            </div>
+            <span className="text-gray-400">Premium</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
+              <Crown size={14} className="text-white" />
+            </div>
+            <span className="text-gray-400">VIP</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gray-600 rounded flex items-center justify-center">
+              <Ban size={14} className="text-white line-through" />
+            </div>
+            <span className="text-gray-400">Nicht Verfügbar</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-yellow-500 rounded-t-lg" />
-          <span className="text-white">VIP</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-500 rounded-t-lg" />
-          <span className="text-white">Ausgewählt</span>
-        </div>
+        
       </div>
     </div>
-  );
+  )
 }
-
