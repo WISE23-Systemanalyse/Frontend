@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Toast } from "@/components/ui/toast"
