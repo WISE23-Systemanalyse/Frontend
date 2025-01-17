@@ -6,13 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { Toast } from "@/components/ui/toast"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { fetchShow, fetchHalls, fetchMovies, updateShow } from './fetchdata'
+import { SearchableSelect } from "@/components/ui/select"
 
 interface EditShowingClientProps {
   params: {
@@ -35,19 +31,24 @@ interface Show {
   movie_id: number
   hall_id: number
   start_time: string
-  end_time: string
-  price: number
+}
+
+interface MovieOption {
+  value: string;
+  label: string;
 }
 
 export default function EditShowingClient({ params }: EditShowingClientProps) {
   const router = useRouter()
+  const [show, setShow] = useState<Show | null>(null)
   const [movies, setMovies] = useState<Movie[]>([])
   const [halls, setHalls] = useState<Hall[]>([])
-  const [selectedMovie, setSelectedMovie] = useState<string>('')
+  const [selectedMovie, setSelectedMovie] = useState<MovieOption | null>(null)
   const [selectedHall, setSelectedHall] = useState<string>('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
-  const [price, setPrice] = useState('1500')
+  const [price, setPrice] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [toast, setToast] = useState<{
     message: string;
@@ -57,68 +58,96 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
     message: '',
     variant: 'default',
     isVisible: false
-  })
+  });
 
   useEffect(() => {
-    const fetchShow = async () => {
+    const loadShow = async () => {
       try {
-        const response = await fetch(`https://api.kts.testcode.tools/shows/${params.id}`)
-        if (!response.ok) throw new Error('Vorstellung konnte nicht geladen werden')
+        console.log('Lade Vorstellung...')
+        console.log('ID:', params.id)
+        const showData = await fetchShow(params.id)
+        console.log('Geladene Vorstellung:', showData)
         
-        const show: Show = await response.json()
-        console.log('Geladene Show:', show)
-        
-        if (!show) throw new Error('Keine Daten erhalten')
-
-        try {
-          const startDate = new Date(show.start_time)
-          setDate(startDate.toISOString().split('T')[0])
-          setTime(startDate.toTimeString().slice(0, 5))
-          
-          setSelectedMovie(show.movie_id?.toString() || '')
-          setSelectedHall(show.hall_id?.toString() || '')
-          setPrice(show.price?.toString() || '1500')
-        } catch (parseError) {
-          console.error('Fehler beim Parsen der Show-Daten:', parseError)
-          throw new Error('Fehler beim Verarbeiten der Vorstellungsdaten')
+        if (!showData) {
+          setError('Keine Daten für diese Vorstellung gefunden')
+          return
         }
-      } catch (error) {
-        console.error('Fehler beim Laden der Vorstellung:', error)
-        setToast({
-          message: error instanceof Error ? error.message : 'Fehler beim Laden der Vorstellung',
-          variant: 'error',
-          isVisible: true
-        })
+
+        setShow(showData)
+
+        // Setze die initialen Werte nur wenn die benötigten Daten existieren
+        if (showData.start_time && showData.hall_id !== undefined) {
+          const startTime = new Date(showData.start_time)
+          
+          // Formatiere das Datum für das Input-Feld (YYYY-MM-DD)
+          const year = startTime.getFullYear()
+          const month = String(startTime.getMonth() + 1).padStart(2, '0')
+          const day = String(startTime.getDate()).padStart(2, '0')
+          const formattedDate = `${year}-${month}-${day}`
+          
+          // Formatiere die Zeit für das Input-Feld (HH:mm)
+          const hours = String(startTime.getHours()).padStart(2, '0')
+          const minutes = String(startTime.getMinutes()).padStart(2, '0')
+          const formattedTime = `${hours}:${minutes}`
+
+          setDate(formattedDate)
+          setTime(formattedTime)
+          setSelectedHall(showData.hall_id.toString())
+          // Setze einen initialen Preis von 1500 (15,00 €)
+          setPrice('1500')
+        }
+      } catch (err) {
+        setError('Vorstellung konnte nicht geladen werden')
+        console.error(err)
       }
     }
 
-    fetchMoviesAndHalls()
-    fetchShow()
-  }, [params.id])
+    const loadMoviesAndHalls = async () => {
+      try {
+        const [moviesData, hallsData] = await Promise.all([
+          fetchMovies(),
+          fetchHalls()
+        ])
+        setMovies(moviesData)
+        setHalls(hallsData)
 
-  const fetchMoviesAndHalls = async () => {
-    try {
-      const [moviesRes, hallsRes] = await Promise.all([
-        fetch('https://api.kts.testcode.tools/movies'),
-        fetch('https://api.kts.testcode.tools/halls')
-      ])
+        console.log('Geladene Filme:', moviesData)
+        console.log('Geladene Halls:', hallsData)
 
-      if (!moviesRes.ok || !hallsRes.ok) throw new Error('Daten konnten nicht geladen werden')
+        // Wenn show und movies geladen sind, setze den ausgewählten Film und Saal
+        if (show) {
+          // Film setzen
+          if (show.movie_id) {
+            const currentMovie = moviesData.find((movie: { id: number }) => movie.id === show.movie_id)
+            if (currentMovie) {
+              setSelectedMovie({
+                value: currentMovie.id.toString(),
+                label: currentMovie.title
+              })
+            }
+          }
 
-      const moviesData = await moviesRes.json()
-      const hallsData = await hallsRes.json()
-
-      setMovies(moviesData)
-      setHalls(hallsData)
-    } catch (error) {
-      console.error('Fehler beim Laden der Daten:', error)
-      setToast({
-        message: 'Fehler beim Laden der Daten',
-        variant: 'error',
-        isVisible: true
-      })
+          // Saal setzen
+          if (show.hall_id) {
+            const currentHall = hallsData.find((hall: { id: number }) => hall.id === show.hall_id)
+            if (currentHall) {
+              setSelectedHall(currentHall.id.toString())
+            }
+          }
+        }
+      } catch (err) {
+        setError('Daten konnten nicht geladen werden')
+        console.error(err)
+      }
     }
-  }
+
+    // Lade die Daten
+    Promise.all([loadShow(), loadMoviesAndHalls()])
+      .catch(err => {
+        console.error('Fehler beim Laden der Daten:', err)
+        setError('Fehler beim Laden der Daten')
+      })
+  }, [params.id, show?.movie_id, show?.hall_id])
 
   const handleSubmit = async () => {
     if (!selectedMovie || !selectedHall || !date || !time) {
@@ -126,70 +155,89 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
         message: 'Bitte füllen Sie alle Felder aus',
         variant: 'error',
         isVisible: true
-      })
-      return
+      });
+      return;
     }
 
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       setToast({
         message: 'Vorstellung wird aktualisiert...',
         variant: 'loading',
         isVisible: true
-      })
+      });
 
-      const [year, month, day] = date.split('-').map(Number)
-      const [hours, minutes] = time.split(':').map(Number)
+      const [year, month, day] = date.split('-').map(Number);
+      const [hours, minutes] = time.split(':').map(Number);
       
-      const startTime = new Date(Date.UTC(year, month - 1, day, hours, minutes))
-      const endTime = new Date(startTime)
-      endTime.setUTCHours(endTime.getUTCHours() + 2)
-      endTime.setUTCMinutes(endTime.getUTCMinutes() + 15)
+      const startTime = new Date(Date.UTC(year, month - 1, day, hours, minutes));
 
       const showData = {
-        movie_id: parseInt(selectedMovie),
+        id: parseInt(params.id),
+        movie_id: parseInt(selectedMovie.value),
         hall_id: parseInt(selectedHall),
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-        price: parseInt(price)
-      }
+        start_time: startTime.toISOString()
+      };
 
-      console.log('Sende Daten:', showData)
-
-      const response = await fetch(`https://api.kts.testcode.tools/shows/${params.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(showData)
-      })
-
-      if (!response.ok) {
-        const errorData = await response.text()
-        console.error('Server Antwort:', errorData)
-        throw new Error(`Vorstellung konnte nicht aktualisiert werden: ${errorData}`)
-      }
+      console.log('Sende Update:', showData);
+      await updateShow(params.id, showData);
 
       setToast({
         message: 'Vorstellung wurde erfolgreich aktualisiert!',
         variant: 'success',
         isVisible: true
-      })
+      });
 
       setTimeout(() => {
-        router.push('/admin/shows')
-      }, 500)
-    } catch (error) {
-      console.error('Fehler beim Aktualisieren:', error)
+        router.push('/admin/shows');
+      }, 1000);
+
+    } catch (err) {
+      console.error(err);
       setToast({
-        message: error instanceof Error ? error.message : 'Fehler beim Aktualisieren der Vorstellung',
+        message: err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten',
         variant: 'error',
         isVisible: true
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
+  };
+
+  const handleMovieChange = (selectedOption: { value: string; label: string } | null) => {
+    if (selectedOption) {
+      const movie = movies.find(m => m.id === parseInt(selectedOption.value));
+      if (movie) {
+        setSelectedMovie({
+          value: movie.id.toString(),
+          label: movie.title
+        });
+      }
+    } else {
+      setSelectedMovie(null);
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#141414] flex items-center justify-center">
+        <div className="text-red-500">{error}</div>
+      </div>
+    )
   }
+
+  if (!show) {
+    return (
+      <div className="min-h-screen bg-[#141414] flex items-center justify-center">
+        <div className="text-white">Lade Vorstellung...</div>
+      </div>
+    )
+  }
+
+  const movieOptions = movies.map(movie => ({
+    value: movie.id.toString(),
+    label: movie.title
+  }));
 
   return (
     <div className="min-h-screen bg-[#141414]">
@@ -216,25 +264,28 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
             <CardTitle className="text-white">Vorstellung bearbeiten</CardTitle>
           </CardHeader>
           <CardContent>
+            {error && (
+              <div className="mb-4 p-2 bg-red-500/10 border border-red-500 rounded text-red-500">
+                {error}
+              </div>
+            )}
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-sm text-gray-400">Film</label>
-                <Select value={selectedMovie} onValueChange={setSelectedMovie}>
-                  <SelectTrigger className="bg-[#3C3C3C] text-white border-0">
-                    <SelectValue placeholder="Film auswählen" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#3C3C3C] border-0">
-                    {movies.map(movie => (
-                      <SelectItem 
-                        key={movie.id} 
-                        value={movie.id.toString()}
-                        className="text-white hover:bg-[#4C4C4C] focus:bg-[#4C4C4C] cursor-pointer"
-                      >
-                        {movie.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={movieOptions}
+                  value={selectedMovie}
+                  onChange={handleMovieChange}
+                  placeholder="Film suchen..."
+                  className="bg-[#3C3C3C] border-0"
+                  noOptionsMessage={({ inputValue }) => 
+                    !inputValue ? null : "Keine Filme gefunden"
+                  }
+                  filterOption={(option, inputValue) => {
+                    if (!inputValue?.trim()) return false;
+                    return option.label.toLowerCase().includes(inputValue.toLowerCase());
+                  }}
+                />
               </div>
 
               <div className="space-y-2">
@@ -299,9 +350,9 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
                 <Button
                   onClick={handleSubmit}
                   disabled={isLoading}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  {isLoading ? 'Wird aktualisiert...' : 'Aktualisieren'}
+                  {isLoading ? 'Wird gespeichert...' : 'Speichern'}
                 </Button>
               </div>
             </div>

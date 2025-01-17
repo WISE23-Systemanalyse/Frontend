@@ -12,17 +12,17 @@ interface Show {
 }
 
 interface Props {
-    setIsLoading: (isLoading: boolean) => void
-    setShows: Dispatch<SetStateAction<Show[]>>
-    setError: (error: string | null) => void
+    setIsLoading?: (isLoading: boolean) => void;
+    setShows?: Dispatch<SetStateAction<Show[]>>;
+    setError?: (error: string | null) => void;
 }
 
+export const fetchShows = async (props: Props): Promise<Show[]> => {
+    if (props.setIsLoading) props.setIsLoading(true);
+    if (props.setError) props.setError(null);
 
-export const fetchShows = async ({setIsLoading, setShows, setError}: Props) => {
-    setIsLoading(true);
-    setError(null);
     try {
-      const response = await fetch(`${process.env.BACKEND_URL}/shows/details`)
+      const response = await fetch(`${process.env.BACKEND_URL}/shows/details`);
       console.log('Response Status:', response.status);
       console.log('Response Headers:', Object.fromEntries(response.headers));
       
@@ -32,11 +32,17 @@ export const fetchShows = async ({setIsLoading, setShows, setError}: Props) => {
 
       const data: Show[] = await response.json();
       console.log('Response Body:', data);
-      setShows(data);
+      
+      if (props.setShows) props.setShows(data);
+      return data;
+
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
+      if (props.setError) {
+        props.setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
+      }
+      throw err;
     } finally {
-      setIsLoading(false);
+      if (props.setIsLoading) props.setIsLoading(false);
     }
-}
+};

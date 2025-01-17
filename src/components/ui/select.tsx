@@ -107,6 +107,116 @@ const SelectSeparator = React.forwardRef<
 ))
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName
 
+// Neue SearchableSelect Komponente
+interface SearchableSelectProps {
+  options: { value: string; label: string }[];
+  value: { value: string; label: string } | null;
+  onChange: (value: { value: string; label: string } | null) => void;
+  placeholder?: string;
+  className?: string;
+  isSearchable?: boolean;
+  isClearable?: boolean;
+  noOptionsMessage?: (obj: { inputValue: string }) => string | null;
+  filterOption?: (option: { value: string; label: string }, inputValue: string) => boolean;
+}
+
+const SearchableSelect = React.forwardRef<
+  HTMLDivElement,
+  SearchableSelectProps
+>(({
+  options,
+  value,
+  onChange,
+  placeholder = "Auswählen...",
+  className,
+  isClearable = true,
+  noOptionsMessage = ({ inputValue }) => !inputValue ? null : "Keine Optionen gefunden",
+  filterOption = (option, inputValue) => 
+    option.label.toLowerCase().includes(inputValue.toLowerCase()),
+}, ref) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const filteredOptions = React.useMemo(() => {
+    if (!searchTerm) return options;
+    return options.filter(option => filterOption(option, searchTerm));
+  }, [options, searchTerm, filterOption]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    if (!isOpen) setIsOpen(true);
+  };
+
+  const handleOptionSelect = (option: { value: string; label: string }) => {
+    onChange(option);
+    setSearchTerm("");
+    setIsOpen(false);
+  };
+
+  const handleClear = () => {
+    onChange(null);
+    setSearchTerm("");
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={searchTerm || (value?.label || "")}
+          onChange={handleInputChange}
+          onFocus={() => setIsOpen(true)}
+          placeholder={placeholder}
+          className={cn(
+            "flex h-10 w-full rounded-md bg-[#3C3C3C] px-3 py-2 text-sm text-white placeholder:text-gray-400 focus:outline-none",
+            className
+          )}
+        />
+        {isClearable && value && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+          >
+            ×
+          </button>
+        )}
+        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50" />
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-[#3C3C3C] rounded-md shadow-lg">
+          <div className="max-h-60 overflow-auto py-1">
+            {filteredOptions.length === 0 ? (
+              <div className="px-2 py-1 text-sm text-gray-400">
+                {noOptionsMessage({ inputValue: searchTerm })}
+              </div>
+            ) : (
+              filteredOptions.map((option) => (
+                <div
+                  key={option.value}
+                  className={cn(
+                    "px-2 py-1.5 text-sm text-white cursor-pointer hover:bg-[#4C4C4C]",
+                    value?.value === option.value && "bg-[#4C4C4C]"
+                  )}
+                  onClick={() => handleOptionSelect(option)}
+                >
+                  {option.label}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+SearchableSelect.displayName = "SearchableSelect";
+
 export {
   Select,
   SelectGroup,
@@ -116,4 +226,5 @@ export {
   SelectLabel,
   SelectItem,
   SelectSeparator,
+  SearchableSelect,
 } 

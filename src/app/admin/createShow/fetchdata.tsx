@@ -1,16 +1,3 @@
-interface Hall {
-    id: number;
-    name: string;
-    seating_capacity: number;
-}
-
-interface Movie {
-    id: number;
-    title: string;
-    description: string;
-    image_url: string;
-}
-
 interface ShowData {
   movie_id: string;
   hall_id: string;
