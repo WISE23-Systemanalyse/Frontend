@@ -7,7 +7,7 @@ import { Film, Sofa, Calendar, Users, ArrowRight } from 'lucide-react'
 interface DashboardStats {
   activeMovies: number
   totalHalls: number
-  todayShowings: number
+  todayShows: number
   registeredUsers: number
 }
 
@@ -33,7 +33,7 @@ const dashboardItems = [
     description: 'Filmvorstellungen und Spielzeiten verwalten',
     icon: Calendar,
     color: 'bg-purple-500',
-    link: '/admin/showings'
+    link: '/admin/shows'
   },
   {
     title: 'Benutzer',
@@ -49,7 +49,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     activeMovies: 0,
     totalHalls: 0,
-    todayShowings: 0,
+    todayShows: 0,
     registeredUsers: 0
   })
   const [isLoading, setIsLoading] = useState(true)
@@ -82,15 +82,21 @@ export default function AdminDashboard() {
         }
 
         // Vorstellungen abrufen
-        let showingCount = 0
+        let showCount = 0
         try {
-          const showingsRes = await fetch(`${API_BASE_URL}/showings`)
-          if (showingsRes.ok) {
-            const showings = await showingsRes.json()
+          const showsRes = await fetch(`${API_BASE_URL}/shows`)
+          if (showsRes.ok) {
+            const shows = await showsRes.json()
             // Filtere nur die Vorstellungen von heute
-            const today = new Date().toISOString().split('T')[0]
-            showingCount = Array.isArray(showings) 
-              ? showings.filter(showing => showing.date?.startsWith(today)).length 
+            const today = new Date()
+            today.setHours(0, 0, 0, 0) // Setze Zeit auf Mitternacht
+            
+            showCount = Array.isArray(shows) 
+              ? shows.filter(show => {
+                  const showDate = new Date(show.start_time)
+                  showDate.setHours(0, 0, 0, 0) // Setze Zeit auf Mitternacht für Vergleich
+                  return showDate.getTime() === today.getTime()
+                }).length 
               : 0
           }
         } catch (error) {
@@ -112,7 +118,7 @@ export default function AdminDashboard() {
         setStats({
           activeMovies: movieCount,
           totalHalls: hallCount,
-          todayShowings: showingCount,
+          todayShows: showCount,
           registeredUsers: userCount
         })
       } catch (error) {
@@ -169,7 +175,7 @@ export default function AdminDashboard() {
                   <div>
                     <p className="text-gray-400 text-sm">Vorstellungen heute</p>
                     <p className="text-2xl font-bold text-white">
-                      {isLoading ? "..." : stats.todayShowings}
+                      {isLoading ? "..." : stats.todayShows}
                     </p>
                   </div>
                 </div>

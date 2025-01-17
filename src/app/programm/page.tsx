@@ -1,132 +1,158 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import Link from 'next/link'
 import { fetchShows } from './fetchdata'
-import Image from 'next/image'
 
 interface Show {
-    id: number;
-    movie_id: number;
-    hall_id: number;
-    start_time: string;
-    title: string;
-    description: string;
-    image_url: string;
-    name: string;
+  id: number;
+  movie_id: number;
+  hall_id: number;
+  start_time: string;
+  title: string;
+  name: string;
+  description: string;
+  image_url: string;
 }
 
-export default function ShowList(){
-  const [shows, setShows] = useState<Show[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface ShowGroups {
+  today: Show[];
+  upcoming: Show[];
+}
 
-  // Shows nach Datum filtern
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const nextMonth = new Date();
-  nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-  const todayShows = shows.filter(show => {
-    const showDate = new Date(show.start_time);
-    showDate.setHours(0, 0, 0, 0);
-    return showDate.getTime() === today.getTime();
-  });
-
-  const futureShows = shows.filter(show => {
-    const showDate = new Date(show.start_time);
-    showDate.setHours(0, 0, 0, 0);
-    const showDateTimestamp = showDate.getTime();
-    // Shows von heute ausschließen und nur zukünftige Shows bis zum nächsten Monat anzeigen
-    return showDateTimestamp > today.getTime() && showDate <= nextMonth;
-  });
+export default function Program() {
+  const [showGroups, setShowGroups] = useState<ShowGroups>({ today: [], upcoming: [] })
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchShows({ setIsLoading, setShows, setError });
-  }, []);
-
-  const ShowCard = ({ showtime }: { showtime: Show }) => (
-    <Card key={showtime.id} className="flex flex-col h-[600px]">
-      <CardHeader className="space-y-2">
-        {showtime.image_url && (
-          <div className="w-full h-48 overflow-hidden rounded-t-lg">
-            <Image
-              src={showtime.image_url}
-              alt={showtime.title}
-              width={500}
-              height={750}
-              layout="responsive"
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-        <CardTitle className="line-clamp-2 h-[3rem]">{showtime.title}</CardTitle>
-        <CardDescription>Saal: {showtime.name}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-grow space-y-4">
-        <p className="text-sm">
-          <span className="font-semibold">Beschreibung:</span>{' '}
-          <span className="line-clamp-4">{showtime.description}</span>
-        </p>
-        <p className="text-sm">
-          <span className="font-semibold">Startzeit:</span> {
-            new Date(showtime.start_time).toLocaleString('de-DE', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              timeZone: 'UTC'
-            })
+    const loadShows = async () => {
+      try {
+        const shows = await fetchShows({}) as unknown as Show[]
+        
+        // Gruppiere Shows in "Heute" und "Demnächst"
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        
+        const grouped = shows.reduce((acc: ShowGroups, show: Show) => {
+          const showDate = new Date(show.start_time)
+          showDate.setHours(0, 0, 0, 0)
+          
+          if (showDate.getTime() === today.getTime()) {
+            acc.today.push(show)
+          } else if (showDate.getTime() > today.getTime()) {
+            acc.upcoming.push(show)
           }
-        </p>
-      </CardContent>
-      <CardFooter className="mt-auto">
-        <button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-2 rounded-md">
-          Tickets buchen
-        </button>
-      </CardFooter>
-    </Card>
-  );
+          return acc
+        }, { today: [], upcoming: [] })
+
+        // Sortiere die Shows nach Startzeit
+        grouped.today.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+        grouped.upcoming.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+
+        setShowGroups(grouped)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadShows()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#141414] p-8">
+        <div className="max-w-7xl w-[85%] mx-auto">
+          <p className="text-white">Lädt...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#141414] p-8">
+        <div className="max-w-7xl w-[85%] mx-auto">
+          <p className="text-red-500">{error}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="container mx-auto py-8">
-      {isLoading && <p>Lade Vorstellungen...</p>}
-      {error && <p className="text-red-500">{error}</p>}
-      
-      <section className="mb-12">
-        <h2 className="text-2xl font-bold mb-6">Heute im Programm</h2>
-        {todayShows.length === 0 ? (
-          <p className="text-gray-500">Heute keine Vorstellungen</p>
+    <div className="min-h-screen bg-[#141414] p-8">
+      <div className="max-w-7xl w-[85%] mx-auto">
+        {showGroups.today.length === 0 && showGroups.upcoming.length === 0 ? (
+          <p className="text-white text-center">Keine Vorstellungen gefunden</p>
         ) : (
-          <div className="relative">
-            <div className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide">
-              {todayShows.map((show) => (
-                <div key={show.id} className="flex-none w-80">
-                  <ShowCard showtime={show} />
+          <>
+            {/* Heute */}
+            {showGroups.today.length > 0 && (
+              <div className="mb-12">
+                <h2 className="text-2xl font-bold text-white mb-6">Heute</h2>
+                <div className="relative overflow-hidden">
+                  <div className="overflow-x-auto scrollbar-hide -mx-8">
+                    <div className="flex gap-6 px-8 py-4">
+                      {showGroups.today.map((show) => (
+                        <div key={show.id} className="flex-none w-[250px]">
+                          <ShowCard show={show} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
+              </div>
+            )}
 
-      <section>
-        <h2 className="text-2xl font-bold mb-6">Demnächst im Programm</h2>
-        {futureShows.length === 0 ? (
-          <p className="text-gray-500">Keine weiteren Vorstellungen geplant</p>
-        ) : (
-          <div className="relative">
-            <div className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide">
-              {futureShows.map((show) => (
-                <div key={show.id} className="flex-none w-80">
-                  <ShowCard showtime={show} />
+            {/* Demnächst */}
+            {showGroups.upcoming.length > 0 && (
+              <div className="mb-12">
+                <h2 className="text-2xl font-bold text-white mb-6">Demnächst</h2>
+                <div className="relative overflow-hidden">
+                  <div className="overflow-x-auto scrollbar-hide -mx-8">
+                    <div className="flex gap-6 px-8 py-4">
+                      {showGroups.upcoming.map((show) => (
+                        <div key={show.id} className="flex-none w-[250px]">
+                          <ShowCard show={show} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            )}
+          </>
         )}
-      </section>
+      </div>
     </div>
   )
 }
+
+// ShowCard Komponente mit Homepage-ähnlichem Hover-Effekt
+const ShowCard = ({ show }: { show: Show }) => (
+  <Link href={`/movie/${show.movie_id}`}>
+    <Card className="bg-[#2C2C2C] border-0 overflow-hidden hover:scale-105 transition-transform duration-200 cursor-pointer hover:ring-2 hover:ring-red-600">
+      <div className="aspect-[2/3] relative">
+        <img
+          src={show.image_url || '/placeholder.jpg'}
+          alt={show.title}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      </div>
+      <CardContent className="p-4">
+        <h3 className="text-lg font-semibold text-white mb-1 line-clamp-2 min-h-[3.5rem]" title={show.title}>
+          {show.title}
+        </h3>
+        <div className="flex items-center justify-between text-sm text-gray-400">
+          <p>{show.name}</p>
+          <p>{new Date(show.start_time).toLocaleTimeString('de-DE', {
+            hour: '2-digit',
+            minute: '2-digit'
+          })} Uhr</p>
+        </div>
+      </CardContent>
+    </Card>
+  </Link>
+);
