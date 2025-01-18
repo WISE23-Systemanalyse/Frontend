@@ -22,7 +22,7 @@ export default function MovieDetail() {
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toLocaleString("de-DE", { month: "long" })
   );
-  const [selectedShowId, setSelectedShowId] = useState<number>(0);
+  const [selectedShowId, setSelectedShowId] = useState<number | undefined>(0);
   const [selectedHallId, setSelectedHallId] = useState<number>(2);
   const [selectedSeats,  setSelectedSeats] = useState<Seat[]>([]);
 
@@ -147,7 +147,7 @@ export default function MovieDetail() {
                 </div>
 
                 {/* Seat Selection */}
-                {selectedHallId && (
+                {selectedShowId && (
                   <div className="bg-neutral-800 rounded-lg p-4">
                     <h2 className="text-xl font-semibold text-white mb-4">Sitzplatz wählen</h2>
                     <HallLayout hallID={selectedHallId} onSeatSelect={(seats) => setSelectedSeats(seats)} />
@@ -155,16 +155,15 @@ export default function MovieDetail() {
                 )}
 
                 {/* Checkout Button */}
-                {selectedShowId && selectedSeats.length > -2 && (
                   <div className="flex justify-center">
                     <button
                       onClick={handleCheckout}
-                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors"
+                      className={`bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors ${selectedSeats.length <1? 'opacity-20' : ''}`}
+                      disabled={selectedSeats.length <1? true : false}
                     >
                       Buchen
                     </button>
                   </div>
-                )}
               </div>
             </div>
           </CardContent>
