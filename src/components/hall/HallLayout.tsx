@@ -13,23 +13,23 @@ export function HallLayout({ hallID, onSeatSelect }: HallLayoutProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
 
-  const fetchSeats = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(
-        `${process.env.BACKEND_URL}/halls/${hallID}/seats`
-      );
-      const data = await response.json();
-      console.log(data);
-      setSeats(data);
-      setIsLoading(false);
-    } catch (err) {
-      console.error(err);
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchSeats = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(
+          `${process.env.BACKEND_URL}/halls/${hallID}/seats`
+        );
+        const data = await response.json();
+        console.log(data);
+        setSeats(data);
+        setIsLoading(false);
+      } catch (err) {
+        console.error(err);
+        setIsLoading(false);
+      }
+    };
+  
     fetchSeats();
   }, [hallID]);
 

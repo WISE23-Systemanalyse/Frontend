@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Show, Movie, Seat } from "@/types/index";
 import DatePicker from "@/components/movie-booking/date-picker";
 import TimePicker from "@/components/movie-booking/time-picker";
@@ -184,7 +184,7 @@ export default function MovieDetail() {
                 {/* Checkout Button */}
                 <div className="flex justify-center">
                   <button
-                    onClick={()=>handleCheckout(selectedSeats)}
+                    onClick={()=>handleCheckout()}
                     className={`bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors ${
                       selectedSeats.length < 1 ? "opacity-20" : ""
                     }`}
