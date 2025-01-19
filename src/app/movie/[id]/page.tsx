@@ -7,11 +7,11 @@ import TimePicker from "@/components/movie-booking/time-picker";
 import MovieInfo from "@/components/movie-booking/movie-info";
 import { HallLayout } from "@/components/hall/HallLayout";
 import { Card, CardContent } from "@/components/ui/card";
-
+import assert from "assert";
 
 export default function MovieDetail() {
   const params = useParams();
-  const router = useRouter();
+
   const [movie, setMovie] = useState<Movie | null>(null);
   const [shows, setShows] = useState<Show[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,7 +24,7 @@ export default function MovieDetail() {
   );
   const [selectedShowId, setSelectedShowId] = useState<number | undefined>(0);
   const [selectedHallId, setSelectedHallId] = useState<number>(2);
-  const [selectedSeats,  setSelectedSeats] = useState<Seat[]>([]);
+  const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
 
   // Event handlers
   const handleShowSelect = (showId: number, hallId: number) => {
@@ -32,16 +32,34 @@ export default function MovieDetail() {
     setSelectedShowId(showId);
     setSelectedHallId(hallId);
   };
-  const handleCheckout = () => {
-    if (selectedShowId) {
-      router.push(`/checkout/${selectedShowId}`);
-    }
+  const handleCheckout = async () => {
+   try {
+    selectedSeats.forEach(async (seat) => {
+      const response = await fetch(`${process.env.BACKEND_URL}/seats/${seat.id}/reserve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          seat_id: seat.id,
+          show_id: selectedShowId,
+        }),
+      });
+      if (response.status === 400) assert.fail('Sitzplatz bereits reserviert');
+      if (!response.ok) throw new Error('Fehler beim Buchen');
+    });
+   } catch (err) {
+    setError(
+      err instanceof Error ? err.message : "Ein Fehler ist aufgetreten"
+    );
+   }
   };
 
   // Data fetching
   React.useEffect(() => {
     const fetchMovieAndShows = async () => {
       try {
+        setIsLoading(true);
         const movieResponse = await fetch(
           `${process.env.BACKEND_URL}/movies/${params.id}`
         );
@@ -120,12 +138,14 @@ export default function MovieDetail() {
                   year={movie.year}
                 />
               </div>
-              
+
               <div className="lg:col-span-2 space-y-6">
                 {/* Booking Section */}
                 <div className="space-y-6">
                   <div className="bg-neutral-800 rounded-lg p-4">
-                    <h2 className="text-xl font-semibold text-white mb-4">Vorstellung wählen</h2>
+                    <h2 className="text-xl font-semibold text-white mb-4">
+                      Vorstellung wählen
+                    </h2>
                     <DatePicker
                       selectedDate={selectedDate}
                       setSelectedDate={setSelectedDate}
@@ -135,7 +155,9 @@ export default function MovieDetail() {
                   </div>
 
                   <div className="bg-neutral-800 rounded-lg p-4">
-                    <h2 className="text-xl font-semibold text-white mb-4">Verfügbare Zeiten</h2>
+                    <h2 className="text-xl font-semibold text-white mb-4">
+                      Verfügbare Zeiten
+                    </h2>
                     <TimePicker
                       shows={shows}
                       selectedDate={selectedDate}
@@ -149,21 +171,28 @@ export default function MovieDetail() {
                 {/* Seat Selection */}
                 {selectedShowId && (
                   <div className="bg-neutral-800 rounded-lg p-4">
-                    <h2 className="text-xl font-semibold text-white mb-4">Sitzplatz wählen</h2>
-                    <HallLayout hallID={selectedHallId} onSeatSelect={(seats) => setSelectedSeats(seats)} />
+                    <h2 className="text-xl font-semibold text-white mb-4">
+                      Sitzplatz wählen
+                    </h2>
+                    <HallLayout
+                      hallID={selectedHallId}
+                      onSeatSelect={(seats) => setSelectedSeats(seats)}
+                    />
                   </div>
                 )}
 
                 {/* Checkout Button */}
-                  <div className="flex justify-center">
-                    <button
-                      onClick={handleCheckout}
-                      className={`bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors ${selectedSeats.length <1? 'opacity-20' : ''}`}
-                      disabled={selectedSeats.length <1? true : false}
-                    >
-                      Buchen
-                    </button>
-                  </div>
+                <div className="flex justify-center">
+                  <button
+                    onClick={()=>handleCheckout(selectedSeats)}
+                    className={`bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors ${
+                      selectedSeats.length < 1 ? "opacity-20" : ""
+                    }`}
+                    disabled={selectedSeats.length < 1 ? true : false}
+                  >
+                    Buchen
+                  </button>
+                </div>
               </div>
             </div>
           </CardContent>
