@@ -1,7 +1,7 @@
 "use client"
 
 import Image from 'next/image'
-import { Movie } from "@/types"
+import { Movie } from "@/types/index"
 
 export default function MovieInfo({
   title,

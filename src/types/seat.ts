@@ -3,7 +3,8 @@ export interface Seat {
     hall_id: number
     row_number: number
     seat_number: number
-    seat_type:  'STANDARD' | 'PREMIUM' | 'VIP' | 'NONE'
+    seat_type:  'STANDARD' | 'PREMIUM' | 'VIP' | 'NONE' 
+    seat_status: 'AVAILABLE' | 'BOOKED' | 'RESERVED'
 }
 
 

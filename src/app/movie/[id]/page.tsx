@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Show, Movie, Seat } from "@/types/index";
 import DatePicker from "@/components/movie-booking/date-picker";
 import TimePicker from "@/components/movie-booking/time-picker";
@@ -11,6 +11,9 @@ import assert from "assert";
 
 export default function MovieDetail() {
   const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const showId = searchParams.get("showId");
 
   const [movie, setMovie] = useState<Movie | null>(null);
   const [shows, setShows] = useState<Show[]>([]);
@@ -22,37 +25,40 @@ export default function MovieDetail() {
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toLocaleString("de-DE", { month: "long" })
   );
-  const [selectedShowId, setSelectedShowId] = useState<number | undefined>(0);
-  const [selectedHallId, setSelectedHallId] = useState<number>(2);
+  const [selectedShowId, setSelectedShowId] = useState<number | undefined>((showId)? parseInt(showId, 10) : undefined);
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
 
   // Event handlers
   const handleShowSelect = (showId: number, hallId: number) => {
     console.log(showId, hallId);
     setSelectedShowId(showId);
-    setSelectedHallId(hallId);
   };
   const handleCheckout = async () => {
-   try {
-    selectedSeats.forEach(async (seat) => {
-      const response = await fetch(`${process.env.BACKEND_URL}/seats/${seat.id}/reserve`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          seat_id: seat.id,
-          show_id: selectedShowId,
-        }),
+    try {
+      const reservationPromises = selectedSeats.map(async (seat) => {
+        const response = await fetch(`${process.env.BACKEND_URL}/seats/${seat.id}/reserve`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            seat_id: seat.id,
+            show_id: selectedShowId,
+          }),
+        });
+        if (response.status === 400) assert.fail('Sitzplatz bereits reserviert');
+        if (!response.ok) throw new Error('Fehler beim Buchen');
       });
-      if (response.status === 400) assert.fail('Sitzplatz bereits reserviert');
-      if (!response.ok) throw new Error('Fehler beim Buchen');
-    });
-   } catch (err) {
-    setError(
-      err instanceof Error ? err.message : "Ein Fehler ist aufgetreten"
-    );
-   }
+
+      await Promise.all(reservationPromises);
+
+      // Navigate to the payment page if all seats are reserved successfully
+      router.push(`/movie/${params.id}/checkout?seats=${selectedSeats.map(seat => seat.id).join(',')}`);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Ein Fehler ist aufgetreten"
+      );
+    }
   };
 
   // Data fetching
@@ -175,7 +181,7 @@ export default function MovieDetail() {
                       Sitzplatz wählen
                     </h2>
                     <HallLayout
-                      hallID={selectedHallId}
+                      showID={selectedShowId}
                       onSeatSelect={(seats) => setSelectedSeats(seats)}
                     />
                   </div>
