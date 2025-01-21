@@ -1,131 +1,209 @@
-/* eslint-disable @next/next/no-img-element */
-'use client'
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
-import { Card, CardContent } from "@/components/ui/card"
-
-interface Movie {
-  id: number
-  title: string
-  year: number
-  description: string
-  rating: number
-  imageUrl: string
-}
-
-interface Show {
-  id: number
-  movieId: number
-  date: string
-  time: string
-  hall: string
-  price: number
-}
+"use client";
+import React, { useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Show, Movie, Seat } from "@/types/index";
+import DatePicker from "@/components/movie-booking/date-picker";
+import TimePicker from "@/components/movie-booking/time-picker";
+import MovieInfo from "@/components/movie-booking/movie-info";
+import { HallLayout } from "@/components/hall/HallLayout";
+import { Card, CardContent } from "@/components/ui/card";
+import assert from "assert";
 
 export default function MovieDetail() {
-  const params = useParams()
-  const [movie, setMovie] = useState<Movie | null>(null)
-  const [shows, setShows] = useState<Show[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const showId = searchParams.get("showId");
 
-  useEffect(() => {
+  const [movie, setMovie] = useState<Movie | null>(null);
+  const [shows, setShows] = useState<Show[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [error, setError] = useState<string | null>(null);
+
+  const [selectedDate, setSelectedDate] = useState(new Date().getDate());
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().toLocaleString("de-DE", { month: "long" })
+  );
+  const [selectedShowId, setSelectedShowId] = useState<number | undefined>((showId)? parseInt(showId, 10) : undefined);
+  const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
+
+  // Event handlers
+  const handleShowSelect = (showId: number, hallId: number) => {
+    console.log(showId, hallId);
+    setSelectedShowId(showId);
+  };
+  const handleCheckout = async () => {
+    try {
+      const reservationPromises = selectedSeats.map(async (seat) => {
+        const response = await fetch(`${process.env.BACKEND_URL}/seats/${seat.id}/reserve`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            seat_id: seat.id,
+            show_id: selectedShowId,
+          }),
+        });
+        if (response.status === 400) assert.fail('Sitzplatz bereits reserviert');
+        if (!response.ok) throw new Error('Fehler beim Buchen');
+      });
+
+      await Promise.all(reservationPromises);
+
+      // Navigate to the payment page if all seats are reserved successfully
+      router.push(`/movie/${params.id}/checkout?seats=${selectedSeats.map(seat => seat.id).join(',')}`);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Ein Fehler ist aufgetreten"
+      );
+    }
+  };
+
+  // Data fetching
+  React.useEffect(() => {
     const fetchMovieAndShows = async () => {
       try {
-        // Lade Film-Details
-        const movieResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/movies/${params.id}`)
-        if (!movieResponse.ok) throw new Error('Film nicht gefunden')
-        const movieData = await movieResponse.json()
-        setMovie(movieData)
+        setIsLoading(true);
+        const movieResponse = await fetch(
+          `${process.env.BACKEND_URL}/movies/${params.id}`
+        );
+        if (!movieResponse.ok) throw new Error("Film nicht gefunden");
+        const movieData = await movieResponse.json();
+        setMovie(movieData);
 
-        // Lade Shows für diesen Film
-        const showsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/movies/${params.id}/shows`)
-        if (!showsResponse.ok) throw new Error('Keine Vorstellungen gefunden')
-        const showsData = await showsResponse.json()
-        setShows(showsData)
+        const showsResponse = await fetch(
+          `${process.env.BACKEND_URL}/movies/${params.id}/shows`
+        );
+        if (!showsResponse.ok) throw new Error("Keine Vorstellungen gefunden");
+        const showsData = await showsResponse.json();
+        setShows(showsData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten')
+        setError(
+          err instanceof Error ? err.message : "Ein Fehler ist aufgetreten"
+        );
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchMovieAndShows()
-  }, [params.id])
+    fetchMovieAndShows();
+  }, [params.id]);
+
+  React.useEffect(() => {
+    setSelectedShowId(undefined);
+  }, [selectedDate, selectedMonth]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#141414] p-8">
-        <div className="max-w-7xl w-[85%] mx-auto">
-          <p className="text-white">Lädt...</p>
+      <div className="min-h-screen bg-neutral-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse flex space-x-4">
+            <div className="flex-1 space-y-4 py-1">
+              <div className="h-4 bg-neutral-800 rounded w-3/4"></div>
+              <div className="space-y-2">
+                <div className="h-4 bg-neutral-800 rounded"></div>
+                <div className="h-4 bg-neutral-800 rounded w-5/6"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error || !movie) {
     return (
-      <div className="min-h-screen bg-[#141414] p-8">
-        <div className="max-w-7xl w-[85%] mx-auto">
-          <p className="text-red-500">{error || 'Film nicht gefunden'}</p>
+      <div className="min-h-screen bg-neutral-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-900/20 border border-red-900 rounded-lg p-4">
+            <p className="text-red-500">{error || "Film nicht gefunden"}</p>
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#141414] p-8">
-      <div className="max-w-7xl w-[85%] mx-auto">
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Film-Details */}
-          <div className="md:w-1/3">
-            <Card className="bg-[#2C2C2C] border-0 overflow-hidden">
-              <div className="aspect-[2/3] relative">
-                <img
-                  src={movie.imageUrl}
-                  alt={movie.title}
-                  className="absolute inset-0 w-full h-full object-cover"
+    <div className="min-h-screen bg-neutral-900 p-4">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Movie Information Section */}
+        <Card className="bg-neutral-800/50 border-neutral-700">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1">
+                <MovieInfo
+                  id={movie.id}
+                  title={movie.title}
+                  description={movie.description}
+                  rating={movie.rating}
+                  genres={movie.genres}
+                  duration={movie.duration}
+                  imageUrl={movie.imageUrl}
+                  year={movie.year}
                 />
               </div>
-            </Card>
-          </div>
 
-          <div className="md:w-2/3">
-            <h1 className="text-3xl font-bold text-white mb-2">{movie.title}</h1>
-            <p className="text-gray-400 mb-4">{movie.year}</p>
-            <div className="flex items-center text-gray-400 mb-6">
-              <span className="mr-1">⭐</span>
-              <span>{movie.rating.toFixed(1)}</span>
-            </div>
-            <p className="text-white mb-8">{movie.description}</p>
+              <div className="lg:col-span-2 space-y-6">
+                {/* Booking Section */}
+                <div className="space-y-6">
+                  <div className="bg-neutral-800 rounded-lg p-4">
+                    <h2 className="text-xl font-semibold text-white mb-4">
+                      Vorstellung wählen
+                    </h2>
+                    <DatePicker
+                      selectedDate={selectedDate}
+                      setSelectedDate={setSelectedDate}
+                      selectedMonth={selectedMonth}
+                      setSelectedMonth={setSelectedMonth}
+                    />
+                  </div>
 
-            {/* Vorstellungen */}
-            <h2 className="text-2xl font-bold text-white mb-4">Vorstellungen</h2>
-            {shows.length === 0 ? (
-              <p className="text-gray-400">Keine Vorstellungen verfügbar</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {shows.map((show) => (
-                  <Card key={show.id} className="bg-[#3C3C3C] border-0 p-4">
-                    <CardContent className="text-white">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-semibold">{new Date(show.date).toLocaleDateString()}</p>
-                          <p>{show.time} Uhr</p>
-                          <p className="text-gray-400">Saal {show.hall}</p>
-                        </div>
-                        <div className="text-xl font-bold">
-                          {show.price.toFixed(2)}€
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                  <div className="bg-neutral-800 rounded-lg p-4">
+                    <h2 className="text-xl font-semibold text-white mb-4">
+                      Verfügbare Zeiten
+                    </h2>
+                    <TimePicker
+                      shows={shows}
+                      selectedDate={selectedDate}
+                      selectedMonth={selectedMonth}
+                      onShowSelect={handleShowSelect}
+                      selectedShowId={selectedShowId}
+                    />
+                  </div>
+                </div>
+
+                {/* Seat Selection */}
+                {selectedShowId && (
+                  <div className="bg-neutral-800 rounded-lg p-4">
+                    <h2 className="text-xl font-semibold text-white mb-4">
+                      Sitzplatz wählen
+                    </h2>
+                    <HallLayout
+                      showID={selectedShowId}
+                      onSeatSelect={(seats) => setSelectedSeats(seats)}
+                    />
+                  </div>
+                )}
+
+                {/* Checkout Button */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={()=>handleCheckout()}
+                    className={`bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors ${
+                      selectedSeats.length < 1 ? "opacity-20" : ""
+                    }`}
+                    disabled={selectedSeats.length < 1 ? true : false}
+                  >
+                    Buchen
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  )
-} 
+  );
+}
