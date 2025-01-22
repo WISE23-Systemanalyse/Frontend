@@ -66,7 +66,7 @@ export default function EditHall() {
     }
 
     fetchHall()
-  }, [])
+  }, [hallId, API_BASE_URL])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -90,7 +90,8 @@ export default function Home() {
         const allMovies = Object.values(moviesByGenre).flat()
         
         // Filtere die Filme nach Suchbegriff
-        let filteredMovies = allMovies.filter(movie => 
+        // Filtere die Filme nach Suchbegriff
+        const filteredMovies = allMovies.filter(movie => 
           movie.title.toLowerCase().includes(searchTerm) ||
           movie.year.toString().includes(searchTerm)
         )
