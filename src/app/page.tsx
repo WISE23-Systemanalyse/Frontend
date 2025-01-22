@@ -1,18 +1,9 @@
-/* eslint-disable @next/next/no-img-element */
 'use client'
 import { useEffect, useState } from 'react'
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, ArrowUpDown } from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Search, Star, Clock, ChevronRight } from "lucide-react"
 import Link from 'next/link'
-import { Button } from "@/components/ui/button"
 
 interface Movie {
   id: number
@@ -25,50 +16,115 @@ interface Movie {
   duration: number
 }
 
-interface MoviesByGenre {
-  [key: string]: Movie[]
+interface FilterState {
+  search: string
+  genres: string[]
+  rating: number
+  year: {
+    from: number
+    to: number
+  }
+  duration: {
+    from: number
+    to: number
+  }
 }
 
 export default function Home() {
-  const [moviesByGenre, setMoviesByGenre] = useState<MoviesByGenre>({})
-  const [filteredMoviesByGenre, setFilteredMoviesByGenre] = useState<MoviesByGenre>({})
-  const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState<'none' | 'rating' | 'year'>('none')
+  const [movies, setMovies] = useState<Movie[]>([])
+  const [filteredMovies, setFilteredMovies] = useState<Movie[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [filters, setFilters] = useState<FilterState>({
+    search: '',
+    genres: [],
+    rating: 0,
+    year: {
+      from: 1900,
+      to: new Date().getFullYear()
+    },
+    duration: {
+      from: 0,
+      to: 300
+    }
+  })
 
+  // Extrahiere alle verfügbaren Filter-Optionen
+  const allGenres = Array.from(new Set(movies.flatMap(movie => movie.genres))).sort()
+
+  // Filter und Sortier-Logik
+  useEffect(() => {
+    let result = [...movies]
+
+    // Erweiterte Suche (Titel, Jahr oder Genre)
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase()
+      result = result.filter(movie =>
+        movie.title.toLowerCase().includes(searchTerm) ||
+        movie.year.toString().includes(searchTerm) ||
+        movie.genres.some(genre => 
+          genre.toLowerCase().includes(searchTerm)
+        )
+      )
+    }
+
+    // Genre Filter
+    if (filters.genres.length > 0) {
+      result = result.filter(movie =>
+        filters.genres.every(genre => movie.genres.includes(genre))
+      )
+    }
+
+    // Rating Filter
+    if (filters.rating > 0) {
+      result = result.filter(movie => movie.rating >= filters.rating)
+    }
+
+    // Jahr Filter
+    result = result.filter(movie =>
+      movie.year >= filters.year.from &&
+      movie.year <= filters.year.to
+    )
+
+    // Dauer Filter
+    result = result.filter(movie =>
+      movie.duration >= filters.duration.from &&
+      movie.duration <= filters.duration.to
+    )
+
+    // Sortierung
+    result.sort((a, b) => {
+      const aValue = a.title
+      const bValue = b.title
+      
+      return aValue.localeCompare(bValue)
+    })
+
+    setFilteredMovies(result)
+  }, [movies, filters])
+
+  // Gruppiere Filme nach Genre
+  const moviesByGenre = allGenres.reduce((acc, genre) => {
+    acc[genre] = filteredMovies.filter(movie => 
+      movie.genres.includes(genre)
+    )
+    return acc
+  }, {} as Record<string, Movie[]>)
+
+  // Sortiere Genres nach Anzahl der Filme
+  const sortedGenreEntries = Object.entries(moviesByGenre)
+    .sort(([, moviesA], [, moviesB]) => moviesB.length - moviesA.length)
+    .filter(([, movies]) => movies.length > 0)
+
+  // Modifiziere den fetchMovies useEffect
   useEffect(() => {
     const fetchMovies = async () => {
       try {
         const response = await fetch(`${process.env.BACKEND_URL}/movies`)
-        if (!response.ok) {
-          throw new Error('Fehler beim Laden der Filme')
-        }
-        const movies: Movie[] = await response.json()
-        
-        // Gruppiere Filme nach Genres
-        const grouped = movies.reduce((acc: MoviesByGenre, movie) => {
-          // Wenn keine Genres vorhanden sind, füge den Film unter "Andere" ein
-          if (!movie.genres || movie.genres.length === 0) {
-            if (!acc["Andere"]) {
-              acc["Andere"] = []
-            }
-            acc["Andere"].push(movie)
-            return acc
-          }
-          
-          // Ansonsten nach Genres gruppieren
-          movie.genres.forEach(genre => {
-            if (!acc[genre]) {
-              acc[genre] = []
-            }
-            acc[genre].push(movie)
-          })
-          return acc
-        }, {})
-
-        setMoviesByGenre(grouped)
+        if (!response.ok) throw new Error('Fehler beim Laden der Filme')
+        const data = await response.json()
+        setMovies(data)
+        setFilteredMovies(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten')
       } finally {
@@ -79,159 +135,171 @@ export default function Home() {
     fetchMovies()
   }, [])
 
-  // Neue Filterfunktion
-  useEffect(() => {
-    const filterAndSortMovies = () => {
-      const searchTerm = searchQuery.toLowerCase()
-      
-      // Wenn nach Rating oder Jahr sortiert wird, zeige alle Filme in einer flachen Liste
-      if (sortBy !== 'none') {
-        // Sammle alle Filme in einer flachen Liste
-        const allMovies = Object.values(moviesByGenre).flat()
-        
-        // Filtere die Filme nach Suchbegriff
-        // Filtere die Filme nach Suchbegriff
-        const filteredMovies = allMovies.filter(movie => 
-          movie.title.toLowerCase().includes(searchTerm) ||
-          movie.year.toString().includes(searchTerm)
-        )
-
-        // Sortiere die gefilterten Filme
-        filteredMovies.sort((a, b) => {
-          if (sortBy === 'rating') {
-            return sortDirection === 'desc' ? b.rating - a.rating : a.rating - b.rating
-          }
-          // Jahr
-          return sortDirection === 'desc' ? b.year - a.year : a.year - b.year
-        })
-
-        // Setze alle sortierten Filme unter einem einzelnen Key
-        setFilteredMoviesByGenre({ 'Alle Filme': filteredMovies })
-        return
-      }
-      
-      // Bei Genre-Sortierung: Gruppiere nach Genres und filtere innerhalb der Genres
-      const filtered = Object.entries(moviesByGenre).reduce((acc: MoviesByGenre, [genre, movies]) => {
-        const filteredMovies = movies.filter(movie => 
-          movie.title.toLowerCase().includes(searchTerm) ||
-          movie.year.toString().includes(searchTerm)
-        )
-        
-        if (filteredMovies.length > 0) {
-          acc[genre] = filteredMovies
-        }
-        return acc
-      }, {})
-      
-      setFilteredMoviesByGenre(filtered)
-    }
-
-    filterAndSortMovies()
-  }, [moviesByGenre, searchQuery, sortBy, sortDirection])
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#141414] p-8">
-        <div className="max-w-7xl w-[85%] mx-auto">
-          <p className="text-white">Lädt...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#141414] p-8">
-        <div className="max-w-7xl w-[85%] mx-auto">
-          <p className="text-red-500">{error}</p>
-        </div>
-      </div>
-    )
-  }
+  if (isLoading) return <div className="min-h-screen bg-[#141414] p-8 text-white">Lädt...</div>
+  if (error) return <div className="min-h-screen bg-[#141414] p-8 text-red-500">{error}</div>
 
   return (
-    <div className="min-h-screen bg-[#141414] p-8">
-      <div className="max-w-7xl w-[85%] mx-auto">
-        {/* Filter Section */}
-        <div className="mb-8 flex gap-4 items-center justify-between">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red-600 w-4 h-4" />
+    <div className="min-h-screen bg-[#141414]">
+      {/* Header-Bereich mit Suche */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex justify-end mb-8">
+          <div className="relative w-[300px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-red-600 w-4 h-4" />
             <Input
               type="text"
-              placeholder="Suche nach Titel oder Jahr..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-[#2C2C2C] text-white border-0 focus:ring-0 focus:ring-red-600/50 placeholder:text-gray-400 pl-10 hover:bg-[#3C3C3C]"
+              placeholder="Suche nach Titel, Jahr oder Genre..."
+              value={filters.search}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              className="pl-10 bg-[#2C2C2C]/80 text-white border-0 focus:ring-1 focus:ring-red-600 h-12 rounded-xl"
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <Select
-              value={sortBy}
-              onValueChange={(value: 'none' | 'rating' | 'year') => setSortBy(value)}
-            >
-              <SelectTrigger className="w-[180px] bg-[#2C2C2C] text-white border-0 hover:bg-[#3C3C3C] focus:ring-red-600/50">
-                <SelectValue placeholder="Sortieren nach..." />
-              </SelectTrigger>
-              <SelectContent className="bg-[#2C2C2C] text-white border-gray-700 hover:cursor-pointer">
-                <SelectItem value="none" className="hover:bg-red-500 hover:text-white focus:bg-red-500 focus:text-white">Standard</SelectItem>
-                <SelectItem value="rating" className="hover:bg-red-500 hover:text-white focus:bg-red-500 focus:text-white">Bewertung</SelectItem>
-                <SelectItem value="year" className="hover:bg-red-500 hover:text-white focus:bg-red-500 focus:text-white">Erscheinungsjahr</SelectItem>
-              </SelectContent>
-            </Select>
-            {sortBy !== 'none' && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
-                className="bg-[#2C2C2C] text-white hover:bg-red-500 hover:text-white focus:ring-red-600/50"
-              >
-                <ArrowUpDown className={`h-4 w-4 transition-transform ${
-                  sortDirection === 'asc' ? 'rotate-180' : ''
-                }`} />
-              </Button>
-            )}
           </div>
         </div>
 
-        {/* Movies Grid */}
-        {Object.keys(filteredMoviesByGenre).length === 0 ? (
-          <p className="text-white text-center">Keine Filme gefunden</p>
-        ) : (
-          Object.entries(filteredMoviesByGenre).map(([genre, movies]) => (
-            <div key={genre} className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-6">{genre}</h2>
+        {/* Movies Display - Immer nach Genre sortiert */}
+        <div className="space-y-12">
+          {sortedGenreEntries.map(([genre, movies]) => (
+            <div key={genre} className="space-y-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-2xl font-bold text-white tracking-tight">
+                  {genre}
+                </h2>
+                <div className="text-sm text-gray-400 font-medium">
+                  {movies.length} {movies.length === 1 ? 'Film' : 'Filme'}
+                </div>
+                <div className="flex-1 border-b border-gray-800" />
+              </div>
               <div className="relative">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {movies.map((movie) => (
-                    <Link href={`/movie/${movie.id}`} key={movie.id}>
-                      <Card className="bg-[#2C2C2C] border-0 overflow-hidden hover:scale-105 transition-transform duration-200 cursor-pointer hover:ring-2 hover:ring-red-600">
-                        <div className="aspect-[2/3] relative">
-                          <img
-                            src={movie.imageUrl}
-                            alt={movie.title}
-                            className="absolute inset-0 w-full h-full object-cover"
-                          />
-                        </div>
-                        <CardContent className="p-4">
-                          <h3 className="text-lg font-semibold text-white mb-1 line-clamp-2 min-h-[3.5rem]" title={movie.title}>{movie.title}</h3>
-                          <p className="text-sm text-gray-400 mb-2">{movie.year}</p>
-                          <div className="flex items-center justify-between text-sm text-gray-400">
-                            <div className="flex items-center">
-                              <span className="mr-1">⭐</span>
-                              <span>{movie.rating.toFixed(1)}</span>
-                            </div>
-                            <span>{movie.duration || '-'} Min.</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
+                <div 
+                  className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"
+                  id={`scroll-${genre}`}
+                >
+                  {movies.map(movie => (
+                    <div key={movie.id} className="flex-none w-[250px] first:ml-1">
+                      <MovieCard 
+                        movie={movie} 
+                        className="h-full"
+                      />
+                    </div>
                   ))}
                 </div>
+                
+                {/* Scroll-Button nur anzeigen, wenn es mehr Inhalt zum Scrollen gibt */}
+                {movies.length > 4 && (
+                  <div 
+                    id={`scroll-indicator-${genre}`}
+                    className="absolute -right-4 top-0 bottom-4 flex items-center justify-end 
+                              bg-gradient-to-l from-[#141414] via-[#141414]/95 to-transparent w-24"
+                  >
+                    <button
+                      onClick={() => {
+                        const container = document.getElementById(`scroll-${genre}`)
+                        if (container) {
+                          container.scrollBy({
+                            left: container.clientWidth - 100,
+                            behavior: 'smooth'
+                          })
+                        }
+                      }}
+                      className="flex items-center justify-center mr-4"
+                      aria-label="Weitere Filme anzeigen"
+                    >
+                      <div className="bg-white/10 backdrop-blur-sm p-3 rounded-full 
+                                    hover:bg-white/20 transform hover:scale-110 transition-all duration-300
+                                    border border-white/20">
+                        <ChevronRight className="w-6 h-6 text-white" />
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-          ))
+          ))}
+        </div>
+
+        {filteredMovies.length === 0 && (
+          <div className="text-center text-gray-400 py-12">
+            Keine Filme gefunden
+          </div>
         )}
       </div>
     </div>
   )
 }
+
+// Neue MovieCard-Komponente mit Portal
+const MovieCard = ({ movie, className }: { movie: Movie; className?: string }) => (
+  <div className="relative group">
+    <Link href={`/movie/${movie.id}`}>
+      <Card className={`
+        bg-[#2C2C2C] border-0 overflow-hidden 
+        cursor-pointer rounded-xl w-full
+        transition-all duration-500
+        ${className || ''}
+      `}>
+        {/* Bild-Container mit exaktem 500x750 Verhältnis (2:3) */}
+        <div className="relative pt-[150%] bg-[#1C1C1C] overflow-hidden">
+          <img
+            src={movie.imageUrl}
+            alt={movie.title}
+            width={500}
+            height={750}
+            className="absolute top-0 left-0 w-full h-full object-cover
+                     transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.onerror = null;
+              target.src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTAwIDc1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTAwIiBoZWlnaHQ9Ijc1MCIgZmlsbD0iIzFjMWMxYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjIwIiBmaWxsPSIjNmI3MjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+S2VpbiBCaWxkIHZlcmbDvGdiYXI8L3RleHQ+PC9zdmc+';
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#2C2C2C] via-transparent to-transparent 
+                        opacity-90 transition-opacity duration-500
+                        group-hover:opacity-50" />
+        </div>
+
+        {/* Content */}
+        <div className="p-4">
+          {/* Titel */}
+          <h3 className="text-base font-bold text-white mb-2 truncate">
+            {movie.title}
+          </h3>
+          
+          {/* Genres */}
+          <div className="flex flex-wrap gap-1 mb-3 overflow-hidden max-h-[22px]">
+            {movie.genres.slice(0, 3).map(genre => (
+              <span
+                key={genre}
+                className="text-xs px-1.5 py-0.5 rounded-full
+                         bg-[#3C3C3C] text-gray-200
+                         whitespace-nowrap"
+              >
+                {genre}
+              </span>
+            ))}
+            {movie.genres.length > 3 && (
+              <span className="text-xs text-gray-400">
+                +{movie.genres.length - 3}
+              </span>
+            )}
+          </div>
+          
+          {/* Meta-Informationen */}
+          <div className="flex items-center justify-between text-sm text-gray-300">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                <span className="font-medium">{movie.rating.toFixed(1)}</span>
+              </div>
+              <span>•</span>
+              <span>{movie.year}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4 text-gray-400" />
+              <span>{movie.duration}m</span>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </Link>
+  </div>
+)
