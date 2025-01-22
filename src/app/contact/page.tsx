@@ -4,15 +4,104 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { Mail, Phone, MapPin, Clock } from 'lucide-react'
+import { useState } from 'react'
+import { Toast } from "@/components/ui/toast"
+
+interface ContactForm {
+  name: string
+  email: string
+  subject: string
+  message: string
+}
 
 export default function Contact() {
-  const handleSubmit = (e: React.FormEvent) => {
+  const [formData, setFormData] = useState<ContactForm>({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [toast, setToast] = useState<{
+    message: string;
+    variant: 'success' | 'error' | 'loading' | 'default';
+    isVisible: boolean;
+  }>({
+    message: '',
+    variant: 'default',
+    isVisible: false
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Hier könnte die Logik für das Absenden des Formulars implementiert werden
+    
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+      setToast({
+        message: 'Bitte füllen Sie alle Felder aus',
+        variant: 'error',
+        isVisible: true
+      })
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      setToast({
+        message: 'Nachricht wird gesendet...',
+        variant: 'loading',
+        isVisible: true
+      })
+
+      const response = await fetch('http://localhost:8000/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
+
+      if (!response.ok) {
+        throw new Error('Nachricht konnte nicht gesendet werden')
+      }
+
+      setToast({
+        message: 'Nachricht wurde erfolgreich gesendet!',
+        variant: 'success',
+        isVisible: true
+      })
+      
+      // Formular zurücksetzen
+      setFormData({
+        name: '',
+        email: '',
+        subject: '',
+        message: ''
+      })
+    } catch (error) {
+      setToast({
+        message: 'Nachricht konnte nicht gesendet werden: ' + error,
+        variant: 'error',
+        isVisible: true
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [id]: value
+    }))
   }
 
   return (
     <div className="min-h-screen bg-[#141414] p-8">
+      <Toast 
+        {...toast} 
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+      />
       <div className="max-w-7xl w-[85%] mx-auto">
         <h1 className="text-4xl font-bold text-white mb-8">Kontakt</h1>
 
@@ -93,50 +182,66 @@ export default function Contact() {
             <Card className="p-6 bg-[#2C2C2C] border-0">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="name" className="block text-sm font-medium text-white mb-1">
                     Name
                   </label>
                   <Input
                     id="name"
                     type="text"
+                    value={formData.name}
+                    onChange={handleChange}
                     placeholder="Ihr Name"
-                    className="bg-[#3C3C3C] border-0"
+                    className="bg-[#3C3C3C] text-white border-0 focus:ring-0 focus:ring-white/20 placeholder:text-gray-400"
+                    disabled={isLoading}
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="email" className="block text-sm font-medium text-white mb-1">
                     E-Mail
                   </label>
                   <Input
                     id="email"
                     type="email"
+                    value={formData.email}
+                    onChange={handleChange}
                     placeholder="ihre@email.de"
-                    className="bg-[#3C3C3C] border-0"
+                    className="bg-[#3C3C3C] text-white border-0 focus:ring-0 focus:ring-white/20 placeholder:text-gray-400"
+                    disabled={isLoading}
                   />
                 </div>
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="subject" className="block text-sm font-medium text-white mb-1">
                     Betreff
                   </label>
                   <Input
                     id="subject"
                     type="text"
+                    value={formData.subject}
+                    onChange={handleChange}
                     placeholder="Betreff"
-                    className="bg-[#3C3C3C] border-0"
+                    className="bg-[#3C3C3C] text-white border-0 focus:ring-0 focus:ring-white/20 placeholder:text-gray-400"
+                    disabled={isLoading}
                   />
                 </div>
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="message" className="block text-sm font-medium text-white mb-1">
                     Nachricht
                   </label>
                   <Textarea
                     id="message"
+                    value={formData.message}
+                    onChange={handleChange}
                     placeholder="Ihre Nachricht"
-                    className="bg-[#3C3C3C] border-0 min-h-[150px]"
+                    className="bg-[#3C3C3C] text-white border-0 focus:ring-0 focus:ring-white/20 placeholder:text-gray-400 min-h-[150px]"
+                    disabled={isLoading}
                   />
                 </div>
-                <Button type="submit" className="w-full bg-red-600 hover:bg-red-500 text-white">
-                  Nachricht senden
+                <Button 
+                  type="submit" 
+                  className="w-full bg-white hover:bg-white/90 text-black transition-colors"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Wird gesendet...' : 'Nachricht senden'}
                 </Button>
               </form>
             </Card>

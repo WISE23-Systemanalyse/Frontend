@@ -84,25 +84,38 @@ export default function Home() {
     const filterAndSortMovies = () => {
       const searchTerm = searchQuery.toLowerCase()
       
-      const filtered = Object.entries(moviesByGenre).reduce((acc: MoviesByGenre, [genre, movies]) => {
-        let filteredMovies = movies.filter(movie => {
-          return (
-            movie.title.toLowerCase().includes(searchTerm) ||
-            searchTerm === movie.year.toString()
-          )
+      // Wenn nach Rating oder Jahr sortiert wird, zeige alle Filme in einer flachen Liste
+      if (sortBy !== 'none') {
+        // Sammle alle Filme in einer flachen Liste
+        const allMovies = Object.values(moviesByGenre).flat()
+        
+        // Filtere die Filme nach Suchbegriff
+        // Filtere die Filme nach Suchbegriff
+        const filteredMovies = allMovies.filter(movie => 
+          movie.title.toLowerCase().includes(searchTerm) ||
+          movie.year.toString().includes(searchTerm)
+        )
+
+        // Sortiere die gefilterten Filme
+        filteredMovies.sort((a, b) => {
+          if (sortBy === 'rating') {
+            return sortDirection === 'desc' ? b.rating - a.rating : a.rating - b.rating
+          }
+          // Jahr
+          return sortDirection === 'desc' ? b.year - a.year : a.year - b.year
         })
 
-        // Sortiere die Filme nach dem ausgewählten Kriterium
-        if (sortBy !== 'none') {
-          filteredMovies = [...filteredMovies].sort((a, b) => {
-            if (sortBy === 'rating') {
-              return sortDirection === 'desc' ? b.rating - a.rating : a.rating - b.rating
-            } else if (sortBy === 'year') {
-              return sortDirection === 'desc' ? b.year - a.year : a.year - b.year
-            }
-            return 0
-          })
-        }
+        // Setze alle sortierten Filme unter einem einzelnen Key
+        setFilteredMoviesByGenre({ 'Alle Filme': filteredMovies })
+        return
+      }
+      
+      // Bei Genre-Sortierung: Gruppiere nach Genres und filtere innerhalb der Genres
+      const filtered = Object.entries(moviesByGenre).reduce((acc: MoviesByGenre, [genre, movies]) => {
+        const filteredMovies = movies.filter(movie => 
+          movie.title.toLowerCase().includes(searchTerm) ||
+          movie.year.toString().includes(searchTerm)
+        )
         
         if (filteredMovies.length > 0) {
           acc[genre] = filteredMovies
@@ -114,7 +127,7 @@ export default function Home() {
     }
 
     filterAndSortMovies()
-  }, [moviesByGenre, searchQuery, sortBy, sortDirection, setFilteredMoviesByGenre])
+  }, [moviesByGenre, searchQuery, sortBy, sortDirection])
 
   if (isLoading) {
     return (

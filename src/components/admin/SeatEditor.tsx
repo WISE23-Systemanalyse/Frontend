@@ -38,32 +38,6 @@ export function SeatEditor({ seats, onChange, hallId }: SeatEditorProps) {
   const [noneSeats, setNoneSeats] = useState<Set<string>>(new Set())
   const [isInitialized, setIsInitialized] = useState(false)
 
-  useEffect(() => {
-    if (hallId === 0 && !isInitialized) {
-      // Initialisierung für einen neuen Saal
-      const initialSeats: Seat[] = []
-      let nextId = -1
-
-      for (let row = 1; row <= rows; row++) {
-        for (let seatNum = 1; seatNum <= seatsPerRow; seatNum++) {
-          initialSeats.push({
-            id: nextId--,
-            hall_id: hallId,
-            row_number: row,
-            seat_number: seatNum,
-            seat_type: SEAT_TYPE.STANDARD
-          })
-        }
-      }
-
-      onChange(initialSeats)
-      setIsInitialized(true)
-    } else if (hallId !== 0) {
-      // Lade existierende Sitze für bestehende Säle
-      loadExistingSeats()
-    }
-  }, [hallId])
-
   const loadExistingSeats = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/seats`)
@@ -104,6 +78,30 @@ export function SeatEditor({ seats, onChange, hallId }: SeatEditorProps) {
       console.error('Fehler beim Laden der Sitze:', error)
     }
   }
+
+  useEffect(() => {
+    if (hallId === 0 && !isInitialized) {
+      const initialSeats: Seat[] = []
+      let nextId = -1
+
+      for (let row = 1; row <= rows; row++) {
+        for (let seatNum = 1; seatNum <= seatsPerRow; seatNum++) {
+          initialSeats.push({
+            id: nextId--,
+            hall_id: hallId,
+            row_number: row,
+            seat_number: seatNum,
+            seat_type: SEAT_TYPE.STANDARD
+          })
+        }
+      }
+
+      onChange(initialSeats)
+      setIsInitialized(true)
+    } else if (hallId !== 0) {
+      loadExistingSeats()
+    }
+  }, [hallId, isInitialized, loadExistingSeats, onChange, rows, seatsPerRow])
 
   const updateSeats = (newRows: number, newSeatsPerRow: number) => {
     const existingSeats = [...seats]

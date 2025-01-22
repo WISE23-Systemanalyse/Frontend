@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import Link from 'next/link'
 import { fetchShows } from './fetchdata'
+import Image from 'next/image'
 
 interface Show {
   id: number;
@@ -135,9 +136,11 @@ const ShowCard = ({ show }: { show: Show }) => (
   <Link href={`/movie/${show.movie_id}`}>
     <Card className="bg-[#2C2C2C] border-0 overflow-hidden hover:scale-105 transition-transform duration-200 cursor-pointer hover:ring-2 hover:ring-red-600">
       <div className="aspect-[2/3] relative">
-        <img
+        <Image
           src={show.image_url || '/placeholder.jpg'}
           alt={show.title}
+          width={500}
+          height={750}
           className="absolute inset-0 w-full h-full object-cover"
         />
       </div>
