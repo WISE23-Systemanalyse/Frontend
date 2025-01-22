@@ -45,6 +45,8 @@ const footerLinks = [
   },
 ]
 
+const API_BASE_URL = process.env.BACKEND_URL;
+
 const socialLinks = [
   { icon: Facebook, href: '#1' },
   { icon: Twitter, href: '#2' },
@@ -85,7 +87,7 @@ export default function Footer() {
         isVisible: true
       })
 
-      const response = await fetch(`http://localhost:8000/newsletter/subscribe`, {
+      const response = await fetch(`${API_BASE_URL}/newsletter/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

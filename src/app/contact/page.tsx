@@ -14,6 +14,8 @@ interface ContactForm {
   message: string
 }
 
+const API_BASE_URL = process.env.BACKEND_URL;
+
 export default function Contact() {
   const [formData, setFormData] = useState<ContactForm>({
     name: '',
@@ -52,7 +54,7 @@ export default function Contact() {
         isVisible: true
       })
 
-      const response = await fetch('http://localhost:8000/contact', {
+      const response = await fetch(`${API_BASE_URL}/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
