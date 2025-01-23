@@ -1,9 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Card, CardContent } from "@/components/ui/card"
 import Link from 'next/link'
 import { fetchShows } from './fetchdata'
-import Image from 'next/image'
 
 interface Show {
   id: number;
@@ -17,12 +15,11 @@ interface Show {
 }
 
 interface ShowGroups {
-  today: Show[];
-  upcoming: Show[];
+  [key: string]: Show[]
 }
 
-export default function Program() {
-  const [showGroups, setShowGroups] = useState<ShowGroups>({ today: [], upcoming: [] })
+export default function Programm() {
+  const [showGroups, setShowGroups] = useState<ShowGroups>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,25 +28,44 @@ export default function Program() {
       try {
         const shows = await fetchShows({}) as unknown as Show[]
         
-        // Gruppiere Shows in "Heute" und "Demnächst"
+        // Gruppiere Shows nach Tagen
         const today = new Date()
         today.setHours(0, 0, 0, 0)
         
-        const grouped = shows.reduce((acc: ShowGroups, show: Show) => {
+        const grouped = shows.reduce((acc: { [key: string]: Show[] }, show: Show) => {
           const showDate = new Date(show.start_time)
-          showDate.setHours(0, 0, 0, 0)
+          const today = new Date()
+          const tomorrow = new Date(today)
+          tomorrow.setDate(tomorrow.getDate() + 1)
           
-          if (showDate.getTime() === today.getTime()) {
-            acc.today.push(show)
-          } else if (showDate.getTime() > today.getTime()) {
-            acc.upcoming.push(show)
+          // Vergleiche nur das Datum, nicht die Uhrzeit
+          const isToday = showDate.toDateString() === today.toDateString()
+          const isTomorrow = showDate.toDateString() === tomorrow.toDateString()
+          
+          const dateKey = isToday 
+            ? 'Heute'
+            : isTomorrow
+              ? 'Morgen'
+              : showDate.toLocaleDateString('de-DE', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })
+          
+          if (!acc[dateKey]) {
+            acc[dateKey] = []
           }
+          acc[dateKey].push(show)
           return acc
-        }, { today: [], upcoming: [] })
+        }, {})
 
-        // Sortiere die Shows nach Startzeit
-        grouped.today.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-        grouped.upcoming.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+        // Sortiere die Shows nach Startzeit innerhalb jedes Tages
+        Object.keys(grouped).forEach(date => {
+          grouped[date].sort((a, b) => 
+            new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+          )
+        })
 
         setShowGroups(grouped)
       } catch (err) {
@@ -83,79 +99,93 @@ export default function Program() {
   }
 
   return (
-    <div className="min-h-screen bg-[#141414] p-8">
-      <div className="max-w-7xl w-[85%] mx-auto">
-        {showGroups.today.length === 0 && showGroups.upcoming.length === 0 ? (
-          <p className="text-white text-center">Keine Vorstellungen gefunden</p>
-        ) : (
-          <>
-            {/* Heute */}
-            {showGroups.today.length > 0 && (
-              <div className="mb-12">
-                <h2 className="text-2xl font-bold text-white mb-6">Heute</h2>
-                <div className="relative overflow-hidden">
-                  <div className="overflow-x-auto scrollbar-hide -mx-8">
-                    <div className="flex gap-6 px-8 py-4">
-                      {showGroups.today.map((show) => (
-                        <div key={show.id} className="flex-none w-[250px]">
-                          <ShowCard show={show} />
-                        </div>
-                      ))}
-                    </div>
+    <div className="min-h-screen bg-[#141414]">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Vorführungen nach Datum gruppiert */}
+        <div className="space-y-12">
+          {Object.entries(showGroups)
+            .sort(([dateA], [dateB]) => {
+              if (dateA === 'Heute') return -1
+              if (dateB === 'Heute') return 1
+              if (dateA === 'Morgen') return -1
+              if (dateB === 'Morgen') return 1
+              return 0
+            })
+            .map(([date, showings]) => (
+              <div key={date} className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-2xl font-bold text-white tracking-tight">
+                    {date}
+                  </h2>
+                  <div className="text-sm text-gray-400 font-medium">
+                    {showings.length} {showings.length === 1 ? 'Vorführung' : 'Vorführungen'}
                   </div>
+                  <div className="flex-1 border-b border-gray-800" />
                 </div>
-              </div>
-            )}
 
-            {/* Demnächst */}
-            {showGroups.upcoming.length > 0 && (
-              <div className="mb-12">
-                <h2 className="text-2xl font-bold text-white mb-6">Demnächst</h2>
-                <div className="relative overflow-hidden">
-                  <div className="overflow-x-auto scrollbar-hide -mx-8">
-                    <div className="flex gap-6 px-8 py-4">
-                      {showGroups.upcoming.map((show) => (
-                        <div key={show.id} className="flex-none w-[250px]">
-                          <ShowCard show={show} />
+                <div className="grid gap-4">
+                  {showings.map((showing) => (
+                    <div key={showing.id} className="bg-[#2C2C2C] rounded-xl overflow-hidden">
+                      <div className="flex">
+                        {/* Filmbild */}
+                        <div className="w-[100px] h-[150px] flex-shrink-0">
+                          <div className="relative w-full h-full">
+                            <img
+                              src={showing.image_url}
+                              alt={showing.title}
+                              className="object-cover w-full h-full"
+                              loading="lazy"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTAwIDc1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTAwIiBoZWlnaHQ9Ijc1MCIgZmlsbD0iIzFjMWMxYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjIwIiBmaWxsPSIjNmI3MjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+S2VpbiBCaWxkIHZlcmbDvGdiYXI8L3RleHQ+PC9zdmc+';
+                              }}
+                            />
+                          </div>
                         </div>
-                      ))}
+
+                        {/* Vorführungsdetails */}
+                        <div className="flex-1 p-4">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex flex-col gap-2">
+                              <div className="text-lg text-white font-bold">
+                                {showing.title}
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <div className="text-xl font-bold text-red-600">
+                                  {new Date(showing.start_time).toLocaleTimeString('de-DE', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </div>
+                                <div className="text-sm text-gray-400">
+                                  Saal {showing.name}
+                                </div>
+                              </div>
+                            </div>
+                            <Link
+                              href={`/booking/${showing.id}`}
+                              className="bg-red-600 text-white px-6 py-3 rounded-lg 
+                                       hover:bg-red-700 transition-colors whitespace-nowrap"
+                            >
+                              Tickets buchen
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
-            )}
-          </>
+            ))}
+        </div>
+
+        {Object.keys(showGroups).length === 0 && (
+          <div className="text-center text-gray-400 py-12">
+            Keine Vorführungen gefunden
+          </div>
         )}
       </div>
     </div>
   )
 }
-
-// ShowCard Komponente mit Homepage-ähnlichem Hover-Effekt
-const ShowCard = ({ show }: { show: Show }) => (
-  <Link href={`/movie/${show.movie_id}`}>
-    <Card className="bg-[#2C2C2C] border-0 overflow-hidden hover:scale-105 transition-transform duration-200 cursor-pointer hover:ring-2 hover:ring-red-600">
-      <div className="aspect-[2/3] relative">
-        <Image
-          src={show.image_url || '/placeholder.jpg'}
-          alt={show.title}
-          width={500}
-          height={750}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      </div>
-      <CardContent className="p-4">
-        <h3 className="text-lg font-semibold text-white mb-1 line-clamp-2 min-h-[3.5rem]" title={show.title}>
-          {show.title}
-        </h3>
-        <div className="flex items-center justify-between text-sm text-gray-400">
-          <p>{show.name}</p>
-          <p>{new Date(show.start_time).toLocaleTimeString('de-DE', {
-            hour: '2-digit',
-            minute: '2-digit'
-          })} Uhr</p>
-        </div>
-      </CardContent>
-    </Card>
-  </Link>
-);
