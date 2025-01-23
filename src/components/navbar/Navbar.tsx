@@ -23,7 +23,7 @@ const navItems = [
 const ProfileITems = [
     { name: 'Your Profile', href: '/profile' },
     { name: 'Settings', href: '/settings' },
-    { name: 'Sign out', href: '/home' },
+    { name: 'Sign out', href: '/' },
     ]
 
 
