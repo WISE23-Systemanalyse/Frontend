@@ -14,6 +14,8 @@ export default function MovieDetail() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const showId = searchParams.get("showId");
+  const dateParam = searchParams.get("date");
+  const monthParam = searchParams.get("month");
 
   const [movie, setMovie] = useState<Movie | null>(null);
   const [shows, setShows] = useState<Show[]>([]);
@@ -21,9 +23,11 @@ export default function MovieDetail() {
   
   const [error, setError] = useState<string | null>(null);
 
-  const [selectedDate, setSelectedDate] = useState(new Date().getDate());
+  const [selectedDate, setSelectedDate] = useState(
+    dateParam ? parseInt(dateParam, 10) : new Date().getDate()
+  );
   const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toLocaleString("de-DE", { month: "long" })
+    monthParam || new Date().toLocaleString("de-DE", { month: "long" })
   );
   const [selectedShowId, setSelectedShowId] = useState<number | undefined>((showId)? parseInt(showId, 10) : undefined);
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
