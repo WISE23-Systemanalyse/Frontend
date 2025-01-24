@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fetchShows } from './fetchdata'
-import { ChevronRight } from 'lucide-react'
 
 interface Show {
   id: number;
