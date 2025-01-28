@@ -57,7 +57,7 @@ export default function MovieDetail() {
       await Promise.all(reservationPromises);
 
       // Navigate to the payment page if all seats are reserved successfully
-      router.push(`/checkout?seats=${selectedSeats.map(seat => seat.id).join(',')}`);
+      router.push(`/checkout?seats=${selectedSeats.map(seat => seat.id).join(',')}&showId=${selectedShowId}`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Ein Fehler ist aufgetreten"
