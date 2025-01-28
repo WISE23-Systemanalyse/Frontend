@@ -1,58 +1,68 @@
 "use client";
-import React from 'react'
+import React, { useEffect, useState } from 'react';
 import { useSession } from "next-auth/react";
-import { signIn, signOut } from "next-auth/react";
 import { redirect } from 'next/navigation';
-import { useEffect } from 'react';
+import ProfileHeader from '@/components/profile/profile-header';
+import ProfileTabs from '@/components/profile/profile-tabs';
+import { User } from '@/types/user';
 
-const Profile = () => {
-  const { data: session } = useSession();
-  const [userData, setUserData] = React.useState(null);
+const ProfilePage = () => {
+  const [user, setUser] = useState<User>();
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      redirect('/auth/signin');
+    },
+  });
 
-useEffect (() => {
-  const fetchUserData = async () => {
-    if (session) {
-      const response = await fetch('http://localhost:8000/me', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.accessToken.token}`
+  const AccessToken = session?.accessToken;
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`${process.env.BACKEND_URL}/me`, {
+          headers: {
+            Authorization: `Bearer ${AccessToken}`,
+          },
+        });
+
+        const data = await response.json();
+        if (response.status === 401) {
+          throw new Error('Unauthorized access');
         }
-      });
-      const data = await response.json();
-      setUserData(data);
+
+        if (response.status === 404) {
+          throw new Error('User not found');
+        }
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch user');
+        }
+
+        const user: User = data.message;
+        console.log('User:', user);
+        setUser(user);
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    };
+    
+    if (AccessToken) {
+      fetchUser();
     }
-  };
-  fetchUserData();
-}, [session]);
+  }, [AccessToken]);
+
+  if (status === 'loading' || !user) {
+    return <div className="flex justify-center items-center h-screen bg-black text-white">Loading...</div>;
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-center">Profile</h2>
-        {session ? (
-          <div className='space-y-4 border-spacing-0.5'>
-            <h1>Profile</h1>
-            <p>ID: {session.accessToken.id}</p>
-            <p>Email: {session.accessToken.email}</p>
-            <p>First Name: {userData?.firstName}</p>
-            <p>Last Name: {userData?.lastName}</p>
-            <p>Username: {session?.user?.userName}</p>
-            <p>First Name: {session?.user?.firstName}</p>
-            <p>Image: {session?.user?.imageUrl}</p>
-
-            <button onClick={()=>signOut()}>Logout</button>
-          </div>
-          ): <>
-          <button onClick={()=> signIn()}>Login</button>
-          <button onClick={()=> redirect("/auth/signup") }>Sign Up</button>
-          </>
-        
-        }
-
+    <div className="min-h-screen bg-black text-white p-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        <ProfileHeader user={user!} />
+        <ProfileTabs />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Profile
+export default ProfilePage;

@@ -1,89 +1,61 @@
-import NextAuth from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
+import NextAuth from "next-auth"
+import CredentialsProvider from "next-auth/providers/credentials"
 
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Please enter email and password');
-        }
-
         try {
-          const response = await fetch("http://localhost:8000/signin", {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-            },
+          const res = await fetch(`${process.env.BACKEND_URL}/signin`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
+              email: credentials?.email,
+              password: credentials?.password,
             }),
-          });
+          })
 
-          const userData = await response.json();
-          console.log('userData:', userData);
-
-          if (!response.ok) {
-            throw new Error(userData.error || 'Authentication failed');
+          if (!res.ok) {
+            const error = await res.json()
+            throw new Error(error.error || "Authentication failed")
           }
 
+          const data = await res.json()
+          // Decode the JWT token to get user information
+          const tokenString = data.token.token
           return {
-            id: userData.id,
-            email: userData.email,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            userName: userData.userName,
-            imageUrl: userData.imageUrl,
-            accessToken: userData.token,
-          };
+            accessToken: tokenString,
+          }
         } catch (error) {
-          console.error('Auth Error:', error);
-          throw new Error(error.message || 'Authentication failed');
+          console.error("Authorization error:", error)
+          throw error // Propagate the error to show in the UI
         }
       },
     }),
   ],
   pages: {
-    signIn: '/auth/signin',
-    newUser: '/auth/signup',
-    error: '/auth/error',
+    signIn: "/auth/signin",
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.accessToken = user.token;
-        token.id = user.id;
-        token.email = user.email;
-        token.firstName = user.firstName;
-        token.lastName = user.lastName;
-        token.userName = user.userName;
-        token.imageUrl = user.imageUrl;
+        token.accessToken = user.accessToken
       }
-      return token;
+      return token
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id;
-        session.user.email = token.email;
-        session.user.firstName = token.firstName;
-        session.user.lastName = token.lastName;
-        session.user.userName = token.userName;
-        session.user.imageUrl = token.imageUrl;
-        session.accessToken = token.accessToken;
-      }
-      return session;
-    }
-  },
-  session: {
-    strategy: "jwt",
+      session.accessToken = token.accessToken
+      return session
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
-});
+})
 
-export { handler as GET, handler as POST };
+export const GET = handler
+export const POST = handler
+

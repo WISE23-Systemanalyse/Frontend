@@ -24,7 +24,7 @@ const ProfileITems = [
     { name: 'Your Profile', href: '/profile' },
     { name: 'Settings', href: '/settings' },
     { name: 'Sign out', href: '/' },
-    ]
+]
 
 
 export default function Navbar() {
