@@ -4,6 +4,16 @@ import { useEffect, useState } from 'react';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { useParams } from 'next/navigation';
 
+interface Payment {
+  id: number;
+  amount: number;
+  payment_time: string;
+  tax: number;
+  payment_method: string;
+  payment_status: string;
+  payment_details: string;
+}
+
 interface BookingDetails {
   id: number;
   seat_id: number;
@@ -22,43 +32,84 @@ interface BookingDetails {
   };
 }
 
+interface ConfirmationData {
+  payment: Payment;
+  bookings: BookingDetails[];
+}
+
 export default function ConfirmationPage() {
   const params = useParams();
-  const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null);
+  const [confirmationData, setConfirmationData] = useState<ConfirmationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchBookingDetails = async () => {
+    const fetchConfirmationData = async () => {
       try {
-        // 1. Hole zuerst die Buchungs-ID über payment
+        // 1. Payment-Details
         const paymentResponse = await fetch(
           `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/payments/${params.paymentId}`
         );
-        if (!paymentResponse.ok) {
-          throw new Error('Payment nicht gefunden');
-        }
+        if (!paymentResponse.ok) throw new Error('Zahlungsdetails nicht gefunden');
         const paymentData = await paymentResponse.json();
-        
-        // 2. Hole dann die Buchungsdetails
-        const bookingResponse = await fetch(
-          `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/bookings/${paymentData.booking_id}`
+        console.log('Payment Data:', paymentData);
+
+        // 2. Buchungen
+        const bookingsResponse = await fetch(
+          `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/bookings/payment/${params.paymentId}`
         );
-        if (!bookingResponse.ok) {
-          throw new Error('Buchung nicht gefunden');
-        }
-        const bookingData = await bookingResponse.json();
-        setBookingDetails(bookingData);
+        if (!bookingsResponse.ok) throw new Error('Buchungen nicht gefunden');
+        const bookingsData = await bookingsResponse.json();
+        console.log('Bookings Data:', bookingsData);
+
+        // 3. Für jede Buchung: Sitze, Shows und Movies laden
+        const enrichedBookings = await Promise.all(
+          bookingsData.map(async (booking: BookingDetails) => {
+            // Seat Details
+            const seatResponse = await fetch(
+              `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/seats/${booking.seat_id}`
+            );
+            const seatData = await seatResponse.json();
+
+            // Show Details
+            const showResponse = await fetch(
+              `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/shows/${booking.show_id}`
+            );
+            const showData = await showResponse.json();
+
+            // Movie Details
+            const movieResponse = await fetch(
+              `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/movies/${showData.movie_id}`
+            );
+            const movieData = await movieResponse.json();
+
+            return {
+              ...booking,
+              seat: seatData,
+              show: {
+                ...showData,
+                movie: movieData
+              }
+            };
+          })
+        );
+
+        console.log('Enriched Bookings:', enrichedBookings);
+
+        setConfirmationData({
+          payment: paymentData,
+          bookings: enrichedBookings
+        });
       } catch (err) {
-        setError('Fehler beim Laden der Buchungsdetails');
-        console.error(err);
+        console.error('Fetch Error:', err);
+        setError('Fehler beim Laden der Details');
       } finally {
         setIsLoading(false);
       }
     };
 
     if (params.paymentId) {
-      fetchBookingDetails();
+      fetchConfirmationData();
     }
   }, [params.paymentId]);
 
@@ -70,21 +121,35 @@ export default function ConfirmationPage() {
     );
   }
 
-  if (error || !bookingDetails) {
+  if (error || !confirmationData) {
     return (
       <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
-        <div className="text-red-500">{error || 'Keine Buchungsdetails gefunden'}</div>
+        <div className="text-red-500">{error || 'Keine Details gefunden'}</div>
       </div>
     );
   }
 
+  const { payment, bookings } = confirmationData;
+  const firstBooking = bookings[0];
+
   const qrCodeData = JSON.stringify({
-    bookingId: bookingDetails.id,
-    movie: bookingDetails.show.movie.title,
-    showTime: new Date(bookingDetails.show.start_time).toLocaleString('de-DE'),
-    seat: `Reihe ${bookingDetails.seat.row_number}, Platz ${bookingDetails.seat.seat_number}`,
-    category: bookingDetails.seat.category,
-    paymentId: bookingDetails.payment_id
+    payment: {
+      id: payment.id,
+      amount: payment.amount.toFixed(2),
+      tax: payment.tax.toFixed(2),
+      method: payment.payment_method,
+      status: payment.payment_status,
+      time: new Date(payment.payment_time).toLocaleString('de-DE'),
+    },
+    bookings: bookings.map(booking => ({
+      bookingId: booking.id,
+      seat: booking.seat ? `Reihe ${booking.seat.row_number}, Platz ${booking.seat.seat_number}` : 'Unbekannter Platz',
+      category: booking.seat?.category || 'Standard'
+    })),
+    movie: firstBooking.show?.movie?.title || 'Unbekannter Film',
+    showTime: firstBooking.show?.start_time ? 
+      new Date(firstBooking.show.start_time).toLocaleString('de-DE') : 
+      'Zeitpunkt unbekannt'
   });
 
   return (
@@ -93,23 +158,41 @@ export default function ConfirmationPage() {
         <h1 className="text-2xl font-bold text-center mb-6">Buchungsbestätigung</h1>
         
         <div className="text-center mb-8">
-          <h2 className="text-xl font-semibold">{bookingDetails.show.movie.title}</h2>
+          <h2 className="text-xl font-semibold">
+            {firstBooking.show?.movie?.title || 'Unbekannter Film'}
+          </h2>
           <p className="text-gray-600">
-            {new Date(bookingDetails.show.start_time).toLocaleString('de-DE')}
+            {firstBooking.show?.start_time ? 
+              new Date(firstBooking.show.start_time).toLocaleString('de-DE') : 
+              'Zeitpunkt unbekannt'
+            }
           </p>
         </div>
 
+        <div className="bg-gray-50 p-4 rounded">
+          <h3 className="font-semibold mb-2">Zahlungsdetails:</h3>
+          <p>Gesamtbetrag: {payment.amount.toFixed(2)} €</p>
+          <p>MwSt.: {payment.tax.toFixed(2)} €</p>
+          <p>Zahlungsmethode: {payment.payment_method}</p>
+          <p>Status: {payment.payment_status}</p>
+          <p>Datum: {new Date(payment.payment_time).toLocaleString('de-DE')}</p>
+        </div>
+
         <div className="space-y-4">
-          <p>
-            <span className="font-semibold">Sitzplatz:</span> Reihe {bookingDetails.seat.row_number}, 
-            Platz {bookingDetails.seat.seat_number}
-          </p>
-          <p>
-            <span className="font-semibold">Kategorie:</span> {bookingDetails.seat.category}
-          </p>
-          <p>
-            <span className="font-semibold">Buchungs-ID:</span> {bookingDetails.id}
-          </p>
+          <h3 className="font-semibold">Gebuchte Plätze:</h3>
+          {bookings.map((booking) => (
+            <div key={booking.id} className="p-2 bg-gray-50 rounded">
+              <p>
+                {booking.seat ? 
+                  `Reihe ${booking.seat.row_number}, Platz ${booking.seat.seat_number}` :
+                  'Unbekannter Platz'
+                }
+                <span className="ml-2 text-gray-600">
+                  ({booking.seat?.category || 'Standard'})
+                </span>
+              </p>
+            </div>
+          ))}
         </div>
 
         <div className="flex justify-center mt-8">

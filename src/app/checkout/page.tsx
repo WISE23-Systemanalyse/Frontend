@@ -178,36 +178,48 @@ export default function Checkout() {
           console.log('PayPal payment captured:', paypalDetails);
 
           // 1. Create payment
-          const paymentResponse = await fetch(`${process.env.BACKEND_URL ?? 'http://localhost:8000'}/payments`, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              amount: 10 * seats.length,
-              tax: (10 * seats.length) * 0.19,
-              payment_method: 'PAYPAL',
-              payment_status: 'COMPLETED',
-              payment_details: paypalDetails
-            } as PaymentData)
-          });
+          const totalAmount = calculateTotal();
+          const payment = {
+            amount: totalAmount,
+            tax: totalAmount * TAX_RATE,
+            payment_method: 'PAYPAL',
+            payment_status: 'COMPLETED',
+            payment_details: JSON.stringify({
+              paypal_order_id: data.orderID,
+              payer: paypalDetails.payer,
+              status: paypalDetails.status
+            })
+          };
+
+          console.log('Creating payment with data:', payment);
+
+          const paymentResponse = await fetch(
+            `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/payments`, 
+            {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(payment)
+            }
+          );
 
           if (!paymentResponse.ok) {
-            const errorData = await paymentResponse.json();
-            console.error('Payment error:', errorData);
-            throw new Error('Payment creation failed');
+            const errorText = await paymentResponse.text();
+            console.error('Payment error response:', errorText);
+            throw new Error(`Payment creation failed: ${errorText}`);
           }
 
-          const payment = await paymentResponse.json();
-          console.log('Payment created:', payment);
+          const createdPayment = await paymentResponse.json();
+          console.log('Payment created:', createdPayment);
 
-          // 2. Create bookings for all seats
-          const bookings = await createBookings(payment.id);
+          // 2. Create bookings
+          const bookings = await createBookings(createdPayment.id);
           console.log('Bookings created:', bookings);
 
-          router.push(`/booking/confirmation/${payment.id}`);
+          router.push(`/booking/confirmation/${createdPayment.id}`);
         } catch (error) {
-          console.error('Error:', error);
+          console.error('Full error:', error);
           alert('Ein Fehler ist aufgetreten. Bitte kontaktieren Sie den Support.');
         } finally {
           setIsLoading(false);
