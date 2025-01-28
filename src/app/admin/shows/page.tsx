@@ -139,6 +139,16 @@ export default function Showings() {
     )
   })
 
+  // Gruppiere Vorstellungen nach Sälen
+  const showingsByHall = filteredShowings.reduce((acc: { [key: string]: Showing[] }, showing) => {
+    const hallName = showing.hall_name || 'Unbekannter Saal'
+    if (!acc[hallName]) {
+      acc[hallName] = []
+    }
+    acc[hallName].push(showing)
+    return acc
+  }, {})
+
   return (
     <div className="min-h-screen bg-[#141414]">
       <Toast 
@@ -179,78 +189,85 @@ export default function Showings() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {isLoading ? (
-                <div className="text-center text-gray-400 py-8">Lädt...</div>
-              ) : filteredShowings.length === 0 ? (
-                <div className="text-center text-gray-400 py-8">
-                  {searchTerm ? 'Keine Vorstellungen gefunden' : 'Noch keine Vorstellungen vorhanden'}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredShowings.map(showing => {
-                    const startTime = new Date(showing.start_time);
-
-                    return (
-                      <div 
-                        key={showing.id}
-                        className="bg-[#3C3C3C] rounded-lg overflow-hidden hover:bg-[#4C4C4C] transition-colors"
-                      >
-                        <div className="p-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <h3 className="text-white font-medium text-lg">{showing.movie_title}</h3>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => router.push(`/admin/editShowing/${showing.id}`)}
-                                className="hover:bg-blue-500/20 text-blue-500"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(showing.id.toString())}
-                                className="hover:bg-red-500/20 text-red-500"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex items-center text-gray-400">
-                              <div className="w-24 flex-shrink-0">Saal:</div>
-                              <div className="text-white">{showing.hall_name}</div>
-                            </div>
-                            
-                            <div className="flex items-center text-gray-400">
-                              <div className="w-24 flex-shrink-0">Datum:</div>
-                              <div className="text-white">
-                                {startTime.toLocaleDateString('de-DE', {
-                                  weekday: 'long',
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })}
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center text-gray-400">
-                              <div className="w-24 flex-shrink-0">Zeit:</div>
-                              <div className="text-white">
-                                {startTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+            {isLoading ? (
+              <div className="text-center text-gray-400 py-8">Lädt...</div>
+            ) : Object.keys(showingsByHall).length === 0 ? (
+              <div className="text-center text-gray-400 py-8">
+                {searchTerm ? 'Keine Vorstellungen gefunden' : 'Noch keine Vorstellungen vorhanden'}
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {Object.entries(showingsByHall).map(([hallName, hallShowings]) => (
+                  <div key={hallName} className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <h2 className="text-lg font-bold text-white">{hallName}</h2>
+                      <div className="text-sm text-gray-400">
+                        {hallShowings.length} {hallShowings.length === 1 ? 'Vorstellung' : 'Vorstellungen'}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      <div className="flex-1 border-b border-gray-800" />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {hallShowings.map(showing => {
+                        const startTime = new Date(showing.start_time);
+
+                        return (
+                          <div 
+                            key={showing.id}
+                            className="bg-[#3C3C3C] rounded-lg overflow-hidden hover:bg-[#4C4C4C] transition-colors"
+                          >
+                            <div className="p-4">
+                              <div className="flex justify-between items-start mb-3">
+                                <h3 className="text-white font-medium text-lg">{showing.movie_title}</h3>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => router.push(`/admin/editShowing/${showing.id}`)}
+                                    className="hover:bg-blue-500/20 text-blue-500"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDelete(showing.id.toString())}
+                                    className="hover:bg-red-500/20 text-red-500"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <div className="flex items-center text-gray-400">
+                                  <div className="w-24 flex-shrink-0">Datum:</div>
+                                  <div className="text-white">
+                                    {startTime.toLocaleDateString('de-DE', {
+                                      weekday: 'long',
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric'
+                                    })}
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center text-gray-400">
+                                  <div className="w-24 flex-shrink-0">Zeit:</div>
+                                  <div className="text-white">
+                                    {startTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
