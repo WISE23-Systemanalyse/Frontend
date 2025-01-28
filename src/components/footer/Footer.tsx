@@ -3,13 +3,49 @@ import Link from 'next/link'
 import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { useState } from 'react'
+import { Toast } from "@/components/ui/toast"
 
 const footerLinks = [
-  { title: 'Company', links: ['About Us', 'Careers', 'Contact Us', 'Press'] },
-  { title: 'Movies', links: ['Now Showing', 'Coming Soon', 'Trailers', 'Genres'] },
-  { title: 'Services', links: ['Gift Cards', 'Mobile App', 'Corporate Events', 'Advertise'] },
-  { title: 'Help', links: ['FAQs', 'Terms of Use', 'Privacy Policy', 'Accessibility'] },
+  { 
+    title: 'Unternehmen', 
+    links: [
+      { name: 'Über uns', href: '/about' },
+      { name: 'Karriere', href: '#' },
+      { name: 'Kontakt', href: '/contact' },
+      { name: 'Impressum', href: '/impressum' },
+    ] 
+  },
+  { 
+    title: 'Filme', 
+    links: [
+      { name: 'Aktuell', href: '#' },
+      { name: 'Demnächst', href: '#' },
+      { name: 'Trailer', href: '#' },
+      { name: 'Genres', href: '#' },
+    ]
+  },
+  { 
+    title: 'Service', 
+    links: [
+      { name: 'Gutscheine', href: '#' },
+      { name: 'Mobile App', href: '#' },
+      { name: 'Firmenevents', href: '#' },
+      { name: 'Werbung', href: '#' },
+    ]
+  },
+  { 
+    title: 'Hilfe', 
+    links: [
+      { name: 'FAQ', href: '#' },
+      { name: 'AGB', href: '/agb' },
+      { name: 'Datenschutz', href: '#' },
+      { name: 'Barrierefreiheit', href: '#' },
+    ]
+  },
 ]
+
+const API_BASE_URL = process.env.BACKEND_URL;
 
 const socialLinks = [
   { icon: Facebook, href: '#1' },
@@ -19,8 +55,73 @@ const socialLinks = [
 ]
 
 export default function Footer() {
+  const [email, setEmail] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [toast, setToast] = useState<{
+    message: string;
+    variant: 'success' | 'error' | 'loading' | 'default';
+    isVisible: boolean;
+  }>({
+    message: '',
+    variant: 'default',
+    isVisible: false
+  })
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!email || !email.includes('@')) {
+      setToast({
+        message: 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
+        variant: 'error',
+        isVisible: true
+      })
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      setToast({
+        message: 'Newsletter-Anmeldung wird verarbeitet...',
+        variant: 'loading',
+        isVisible: true
+      })
+
+      const response = await fetch(`${API_BASE_URL}/newsletter/subscribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email })
+      })
+
+      if (!response.ok) {
+        throw new Error('Newsletter-Anmeldung fehlgeschlagen')
+      }
+
+      setToast({
+        message: 'Erfolgreich zum Newsletter angemeldet!',
+        variant: 'success',
+        isVisible: true
+      })
+      setEmail('')
+    } catch (error) {
+      setToast({
+        message: 'Newsletter-Anmeldung fehlgeschlagen. Bitte versuchen Sie es später erneut.'+ error,
+        variant: 'error',
+        isVisible: true
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <footer className="bg-black text-red-400">
+      <Toast 
+        {...toast} 
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+      />
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
         <div className="xl:grid xl:grid-cols-3 xl:gap-8">
           <div className="grid grid-cols-2 gap-8 xl:col-span-2">
@@ -32,12 +133,12 @@ export default function Footer() {
                   </h3>
                   <ul role="list" className="mt-4 space-y-4">
                     {column.links.map((link) => (
-                      <li key={link}>
+                      <li key={link.name}>
                         <Link 
-                          href="#" 
+                          href={link.href} 
                           className="text-base text-white hover:text-red-500 transition-colors duration-200"
                         >
-                          {link}
+                          {link.name}
                         </Link>
                       </li>
                     ))}
@@ -53,12 +154,12 @@ export default function Footer() {
                   </h3>
                   <ul role="list" className="mt-4 space-y-4">
                     {column.links.map((link) => (
-                      <li key={link}>
+                      <li key={link.name}>
                         <Link 
-                          href="#" 
+                          href={link.href} 
                           className="text-base text-white hover:text-red-500 transition-colors duration-200"
                         >
-                          {link}
+                          {link.name}
                         </Link>
                       </li>
                     ))}
@@ -69,14 +170,18 @@ export default function Footer() {
           </div>
           <div className="mt-8 xl:mt-0">
             <h3 className="text-sm font-semibold text-red-500 tracking-wider uppercase">
-              Subscribe to our newsletter
+              Newsletter abonnieren
             </h3>
             <p className="mt-4 text-base text-white">
-              Get the latest updates on new releases, special promotions, and movie news.
+              Erhalten Sie die neuesten Updates zu Filmstarts, Sonderaktionen und Kino-News.
             </p>
-            <form className="mt-4 sm:flex sm:max-w-md">
+            <form 
+              onSubmit={handleSubscribe} 
+              method="POST"
+              className="mt-4 sm:flex sm:max-w-md"
+            >
               <label htmlFor="email-address" className="sr-only">
-                Email address
+                E-Mail-Adresse
               </label>
               <Input
                 type="email"
@@ -84,12 +189,19 @@ export default function Footer() {
                 id="email-address"
                 autoComplete="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="block w-full pl-3 pr-3 py-2 rounded-md leading-5 bg-[#3C3C3C] text-white placeholder-gray-500 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ring-0 focus-visible:ring-0 border-0 focus:border-0 sm:text-sm"
-                placeholder="Enter your email"
+                placeholder="Ihre E-Mail-Adresse"
+                disabled={isLoading}
               />
               <div className="mt-3 rounded-md sm:mt-0 sm:ml-3 sm:flex-shrink-0">
-                <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white">
-                  Subscribe
+                <Button 
+                  type="submit" 
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Wird verarbeitet...' : 'Abonnieren'}
                 </Button>
               </div>
             </form>
