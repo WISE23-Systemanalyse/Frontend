@@ -13,14 +13,15 @@ interface Seat {
   hall_id: number
   row_number: number
   seat_number: number
-  seat_type: string
+  category_id: number
+  seat_status?: string
 }
 
 interface NewSeat {
   hall_id: number
   row_number: number
   seat_number: number
-  seat_type: string
+  category_id: number
 }
 
 interface Hall {
@@ -57,8 +58,21 @@ export default function EditHall() {
         const response = await fetch(`${API_BASE_URL}/halls/${hallId}`)
         if (!response.ok) throw new Error('Saal konnte nicht geladen werden')
         const data = await response.json()
-        setHall(data)
-        setSelectedSeats(data.seats || [])
+        
+        // Stelle sicher, dass seats existiert und ein Array ist
+        const seats = data.seats || []
+        
+        // Stelle sicher, dass alle Sitze eine category_id haben
+        const updatedSeats = seats.map((seat: Seat) => ({
+          ...seat,
+          category_id: seat.category_id || 1 // Standardkategorie falls nicht gesetzt
+        }))
+        
+        setHall({
+          ...data,
+          seats: updatedSeats
+        })
+        setSelectedSeats(updatedSeats)
       } catch (err) {
         setError('Saal konnte nicht geladen werden')
         console.error(err)
@@ -94,8 +108,6 @@ export default function EditHall() {
       })
 
       if (!hallResponse.ok) {
-        const errorText = await hallResponse.text()
-        console.error('Hall Update Error:', errorText)
         throw new Error('Saal konnte nicht aktualisiert werden')
       }
 
@@ -104,29 +116,19 @@ export default function EditHall() {
         hall_id: parseInt(hallId as string),
         row_number: seat.row_number,
         seat_number: seat.seat_number,
-        seat_type: seat.seat_type
+        category_id: seat.category_id
       }))
 
-      try {
-        const syncResponse = await fetch(`${API_BASE_URL}/seats/halls/${hallId}/sync`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(seatsToSync)
-        })
+      const syncResponse = await fetch(`${API_BASE_URL}/seats/halls/${hallId}/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(seatsToSync)
+      })
 
-        if (!syncResponse.ok) {
-          const errorText = await syncResponse.text()
-          console.error('Sync Error:', errorText)
-          throw new Error(`Sitze konnten nicht synchronisiert werden: ${errorText}`)
-        }
-
-        const syncResult = await syncResponse.json()
-        console.log('Sync Result:', syncResult)
-      } catch (syncError) {
-        console.error('Sync Error:', syncError)
-        throw new Error('Sitze konnten nicht synchronisiert werden')
+      if (!syncResponse.ok) {
+        throw new Error('Sitze konnten nicht aktualisiert werden')
       }
 
       setToast({
@@ -144,7 +146,7 @@ export default function EditHall() {
         variant: 'error',
         isVisible: true
       })
-      console.error('Fehler beim Speichern:', err)
+      console.error('Fehler beim Aktualisieren:', err)
     } finally {
       setIsLoading(false)
     }

@@ -13,14 +13,15 @@ interface Seat {
   hall_id: number;
   row_number: number;
   seat_number: number;
-  seat_type: string;
+  category_id: number;
+  seat_status?: string;
 }
 
 interface NewSeat {
   hall_id: number;
   row_number: number;
   seat_number: number;
-  seat_type: string;
+  category_id: number;
 }
 
 const API_BASE_URL = process.env.BACKEND_URL;
@@ -31,7 +32,7 @@ const INITIAL_SEATS = Array.from({ length: 50 }, (_, index) => ({
   hall_id: 0,
   row_number: Math.floor(index / 10) + 1,
   seat_number: (index % 10) + 1,
-  seat_type: 'Standard'
+  category_id: 1 // Standard = 1
 }));
 
 export default function CreateHall() {
@@ -86,7 +87,7 @@ export default function CreateHall() {
           hall_id: hall.id,
           row_number: seat.row_number,
           seat_number: seat.seat_number,
-          seat_type: seat.seat_type
+          category_id: seat.category_id
         }));
 
         const syncResponse = await fetch(`${API_BASE_URL}/seats/halls/${hall.id}/sync`, {

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Show, Movie, Seat } from "@/types/index";
 import DatePicker from "@/components/movie-booking/date-picker";
@@ -64,6 +64,10 @@ export default function MovieDetail() {
       );
     }
   };
+
+  const handleSeatSelection = useCallback((seats: Seat[]) => {
+    setSelectedSeats(seats);
+  }, []);
 
   // Data fetching
   React.useEffect(() => {
@@ -186,7 +190,7 @@ export default function MovieDetail() {
                     </h2>
                     <HallLayout
                       showID={selectedShowId}
-                      onSeatSelect={(seats) => setSelectedSeats(seats)}
+                      onSeatSelectAction={handleSeatSelection}
                     />
                   </div>
                 )}

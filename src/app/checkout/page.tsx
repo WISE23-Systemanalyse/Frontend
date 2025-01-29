@@ -36,6 +36,8 @@ interface SeatWithCategory {
   hall_id: number;
   category_id: number;
   category: {
+    [x: string]: any;
+    surcharge: any;
     id: number;
     name: string;
     price: number;
@@ -54,6 +56,7 @@ export default function Checkout() {
   const [isLoading, setIsLoading] = useState(false);
   const [paypalInitialized, setPaypalInitialized] = useState(false);
   const [seatDetails, setSeatDetails] = useState<SeatWithCategory[]>([]);
+  const [showDetails, setShowDetails] = useState<any>(null);
 
   const TAX_RATE = 0.19; // 19% MwSt
 
@@ -81,29 +84,66 @@ export default function Checkout() {
 
   useEffect(() => {
     const fetchSeatDetails = async () => {
-      const seatPromises = seats.map(seatId =>
-        fetch(`${process.env.BACKEND_URL ?? 'http://localhost:8000'}/seats/${seatId}`)
-          .then(res => res.json())
-      );
-      
-      const details = await Promise.all(seatPromises);
-      setSeatDetails(details);
+      try {
+        const seatPromises = seats.map(async (seatId) => {
+          // Sitz laden
+          const seatResponse = await fetch(`${process.env.BACKEND_URL ?? 'http://localhost:8000'}/seats/${seatId}`);
+          if (!seatResponse.ok) throw new Error(`Fehler beim Laden von Sitz ${seatId}`);
+          const seatData = await seatResponse.json();
+
+          // Kategorie laden
+          const categoryResponse = await fetch(`${process.env.BACKEND_URL ?? 'http://localhost:8000'}/categories/${seatData.category_id}`);
+          if (!categoryResponse.ok) throw new Error('Kategorie konnte nicht geladen werden');
+          const categoryData = await categoryResponse.json();
+
+          return {
+            ...seatData,
+            category: categoryData
+          };
+        });
+
+        const details = await Promise.all(seatPromises);
+        setSeatDetails(details);
+      } catch (error) {
+        console.error('Fehler beim Laden der Sitzdetails:', error);
+      }
     };
 
-    fetchSeatDetails();
+    if (seats.length > 0) {
+      fetchSeatDetails();
+    }
   }, [seats]);
+
+  useEffect(() => {
+    const fetchShowDetails = async () => {
+      const response = await fetch(`${process.env.BACKEND_URL ?? 'http://localhost:8000'}/shows/${showId}`);
+      const data = await response.json();
+      setShowDetails(data);
+    };
+
+    fetchShowDetails();
+  }, [showId]);
 
   const createBookings = async (paymentId: string) => {
     console.log('Creating bookings for seats:', seats);
     
-    const bookings = seats.map(seatId => ({
-      seat_id: seatId,
-      show_id: showId,
-      user_id: 1,
-      payment_id: paymentId
-    }));
+    // Sitzpreise berechnen mit base_price + surcharge
+    const bookingRequest = seats.map(seatId => {
+      const seatDetail = seatDetails.find(detail => detail.id === seatId);
+      if (!seatDetail) throw new Error(`Sitzdetails für Sitz ${seatId} nicht gefunden`);
+      
+      const price = showDetails.base_price + (seatDetail.category?.surcharge || 0);
+      
+      return {
+        seat_id: seatId,
+        show_id: showId,
+        user_id: 1, // TODO: Dynamischer User
+        payment_id: paymentId,
+        price_eur: price // Preis in EUR (z.B. 15.00)
+      };
+    });
 
-    console.log('Request body:', JSON.stringify(bookings, null, 2));
+    console.log('Request body:', JSON.stringify(bookingRequest, null, 2));
 
     try {
       const response = await fetch(`${process.env.BACKEND_URL ?? 'http://localhost:8000'}/bookings`, {
@@ -111,7 +151,7 @@ export default function Checkout() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(bookings)
+        body: JSON.stringify(bookingRequest)
       });
 
       const responseText = await response.text();
@@ -132,112 +172,133 @@ export default function Checkout() {
     }
   };
 
-  const initializePayPal = () => {
-    if (paypalInitialized || !showId || !seats.length) return;
-    setPaypalInitialized(true);
+  const calculateTotal = () => {
+    if (!showDetails || !seatDetails.length) return 0;
+    return seatDetails.reduce((total, seat) => {
+      const seatPrice = showDetails.base_price + (seat.category?.surcharge || 0);
+      return total + seatPrice;
+    }, 0);
+  };
 
-    // @ts-ignore
-    window.paypal?.Buttons({
-      createOrder: (data: any, actions: any) => {
-        const basePrice = 10 * seats.length;
-        const taxAmount = basePrice * TAX_RATE;
-        const totalAmount = basePrice + taxAmount;
+  useEffect(() => {
+    const loadPayPalScript = async () => {
+      // Warten bis alle Daten geladen sind
+      if (!showDetails || !seatDetails.length || seatDetails.some(seat => !seat.category)) {
+        console.log('Warte auf vollständige Daten...', { showDetails, seatDetails });
+        return;
+      }
+      if (paypalInitialized) return;
 
-        return actions.order.create({
-          intent: "CAPTURE",
-          purchase_units: [{
-            amount: {
-              currency_code: "EUR",
-              value: totalAmount.toFixed(2),
-              breakdown: {
-                item_total: {
-                  currency_code: "EUR",
-                  value: basePrice.toFixed(2)
-                },
-                tax_total: {
-                  currency_code: "EUR",
-                  value: taxAmount.toFixed(2)
-                }
-              }
-            },
-            items: [{
-              name: "Kinokarten",
-              quantity: seats.length.toString(),
+      try {
+        setPaypalInitialized(true);
+        
+        // @ts-ignore
+        await window.paypal?.Buttons({
+          createOrder: (data: any, actions: any) => {
+            const items = seatDetails.map(seat => ({
+              name: `Sitz R${seat.row_number} P${seat.seat_number} (${seat.category.category_name || 'Standard'})`,
+              quantity: "1",
               unit_amount: {
                 currency_code: "EUR",
-                value: "10.00"
+                value: (showDetails.base_price + seat.category.surcharge).toFixed(2)
               }
-            }]
-          }]
-        });
-      },
-      onApprove: async (data: any, actions: any) => {
-        try {
-          setIsLoading(true);
-          const paypalDetails = await actions.order.capture();
-          console.log('PayPal payment captured:', paypalDetails);
+            }));
 
-          // 1. Create payment
-          const totalAmount = calculateTotal();
-          const payment = {
-            amount: totalAmount,
-            tax: totalAmount * TAX_RATE,
-            payment_method: 'PAYPAL',
-            payment_status: 'COMPLETED',
-            payment_details: JSON.stringify({
-              paypal_order_id: data.orderID,
-              payer: paypalDetails.payer,
-              status: paypalDetails.status
-            })
-          };
+            const totalAmount = items.reduce((sum, item) => 
+              sum + Number(item.unit_amount.value), 0
+            );
+            const taxAmount = totalAmount * TAX_RATE;
+            const finalAmount = totalAmount + taxAmount;
 
-          console.log('Creating payment with data:', payment);
+            return actions.order.create({
+              intent: "CAPTURE",
+              purchase_units: [{
+                amount: {
+                  currency_code: "EUR",
+                  value: finalAmount.toFixed(2),
+                  breakdown: {
+                    item_total: {
+                      currency_code: "EUR",
+                      value: totalAmount.toFixed(2)
+                    },
+                    tax_total: {
+                      currency_code: "EUR",
+                      value: taxAmount.toFixed(2)
+                    }
+                  }
+                },
+                items: items
+              }]
+            });
+          },
+          onApprove: async (data: any, actions: any) => {
+            try {
+              setIsLoading(true);
+              const paypalDetails = await actions.order.capture();
+              console.log('PayPal payment captured:', paypalDetails);
 
-          const paymentResponse = await fetch(
-            `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/payments`, 
-            {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(payment)
+              // 1. Create payment
+              const totalAmount = calculateTotal();
+              const payment = {
+                amount: totalAmount,
+                tax: totalAmount * TAX_RATE,
+                payment_method: 'PAYPAL',
+                payment_status: 'COMPLETED',
+                payment_details: JSON.stringify({
+                  paypal_order_id: data.orderID,
+                  payer: paypalDetails.payer,
+                  status: paypalDetails.status
+                })
+              };
+
+              console.log('Creating payment with data:', payment);
+
+              const paymentResponse = await fetch(
+                `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/payments`, 
+                {
+                  method: 'POST',
+                  headers: { 
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(payment)
+                }
+              );
+
+              if (!paymentResponse.ok) {
+                const errorText = await paymentResponse.text();
+                console.error('Payment error response:', errorText);
+                throw new Error(`Payment creation failed: ${errorText}`);
+              }
+
+              const createdPayment = await paymentResponse.json();
+              console.log('Payment created:', createdPayment);
+
+              // 2. Create bookings
+              await createBookings(createdPayment.id);
+
+              router.push(`/booking/confirmation/${createdPayment.id}`);
+            } catch (error) {
+              console.error('Full error:', error);
+              alert('Ein Fehler ist aufgetreten. Bitte kontaktieren Sie den Support.');
+            } finally {
+              setIsLoading(false);
             }
-          );
-
-          if (!paymentResponse.ok) {
-            const errorText = await paymentResponse.text();
-            console.error('Payment error response:', errorText);
-            throw new Error(`Payment creation failed: ${errorText}`);
           }
-
-          const createdPayment = await paymentResponse.json();
-          console.log('Payment created:', createdPayment);
-
-          // 2. Create bookings
-          const bookings = await createBookings(createdPayment.id);
-          console.log('Bookings created:', bookings);
-
-          router.push(`/booking/confirmation/${createdPayment.id}`);
-        } catch (error) {
-          console.error('Full error:', error);
-          alert('Ein Fehler ist aufgetreten. Bitte kontaktieren Sie den Support.');
-        } finally {
-          setIsLoading(false);
-        }
+        }).render('#paypal-button-container');
+      } catch (error) {
+        console.error('PayPal Initialisierungsfehler:', error);
+        setPaypalInitialized(false);
       }
-    }).render('#paypal-button-container');
-  };
+    };
 
-  const calculateTotal = () => {
-    return seatDetails.reduce((total, seat) => total + seat.category.price, 0);
-  };
+    loadPayPalScript();
+  }, [showDetails, seatDetails, paypalInitialized]);
 
   return (
     <div className="min-h-screen bg-neutral-900 p-4">
       {showId && seats.length > 0 && (
         <Script 
           src={`https://www.paypal.com/sdk/js?client-id=${clientId}&currency=EUR&merchant-id=${merchantId}`}
-          onLoad={initializePayPal}
           strategy="afterInteractive"
         />
       )}
@@ -247,7 +308,7 @@ export default function Checkout() {
           <h2 className="text-xl font-semibold text-white mb-4">Ausgewählte Sitzplätze</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {seats.map(seatId => (
-              <SeatSelection key={seatId} seatId={seatId} />
+              <SeatSelection key={seatId} seatId={seatId} showId={showId} />
             ))}
           </div>
           <p className="text-white mt-4">
@@ -255,7 +316,7 @@ export default function Checkout() {
           </p>
         </div>
 
-        <PriceOverview numberOfSeats={seats.length} />
+        <PriceOverview numberOfSeats={seats.length} seatIds={seats} showId={showId} />
         
         <div id="paypal-button-container" className="min-h-[150px] bg-white rounded-lg p-4" />
       </div>

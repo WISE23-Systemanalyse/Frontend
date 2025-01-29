@@ -71,25 +71,25 @@ export default function ConfirmationPage() {
             );
             const seatData = await seatResponse.json();
 
+            // Kategorie Details direkt laden
+            const categoryResponse = await fetch(
+              `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/categories/${seatData.category_id}`
+            );
+            const categoryData = await categoryResponse.json();
+
             // Show Details
             const showResponse = await fetch(
               `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/shows/${booking.show_id}`
             );
             const showData = await showResponse.json();
 
-            // Movie Details
-            const movieResponse = await fetch(
-              `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/movies/${showData.movie_id}`
-            );
-            const movieData = await movieResponse.json();
-
             return {
               ...booking,
-              seat: seatData,
-              show: {
-                ...showData,
-                movie: movieData
-              }
+              seat: {
+                ...seatData,
+                category: categoryData
+              },
+              show: showData
             };
           })
         );
@@ -144,7 +144,7 @@ export default function ConfirmationPage() {
     bookings: bookings.map(booking => ({
       bookingId: booking.id,
       seat: booking.seat ? `Reihe ${booking.seat.row_number}, Platz ${booking.seat.seat_number}` : 'Unbekannter Platz',
-      category: booking.seat?.category || 'Standard'
+      category: typeof booking.seat?.category === 'object' ? (booking.seat.category as { category_name: string }).category_name : 'Standard'
     })),
     movie: firstBooking.show?.movie?.title || 'Unbekannter Film',
     showTime: firstBooking.show?.start_time ? 
@@ -188,7 +188,7 @@ export default function ConfirmationPage() {
                   'Unbekannter Platz'
                 }
                 <span className="ml-2 text-gray-600">
-                  ({booking.seat?.category || 'Standard'})
+                  ({typeof booking.seat?.category === 'object' ? (booking.seat.category as { category_name: string }).category_name : 'Standard'})
                 </span>
               </p>
             </div>
