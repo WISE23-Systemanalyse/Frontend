@@ -49,13 +49,12 @@ interface GroupedBookings {
 
 export default function AdminBookings() {
   const router = useRouter()
-  const [bookings, setBookings] = useState<Booking[]>([])
   const [groupedBookings, setGroupedBookings] = useState<GroupedBookings>({})
   const [expandedShows, setExpandedShows] = useState<number[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [movies, setMovies] = useState<Movie[]>([])
+  const [, setMovies] = useState<Movie[]>([])
 
   useEffect(() => {
     const loadData = async () => {
@@ -170,7 +169,7 @@ export default function AdminBookings() {
           <div className="p-6">
             <div className="space-y-4">
               {Object.entries(groupedBookings).map(([showId, show]) => {
-                const filteredBookings = show.bookings.filter(booking => 
+                const filteredBookings = show.bookings.filter((booking: Booking) => 
                   filterBookings(booking, searchTerm)
                 )
 
