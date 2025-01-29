@@ -83,13 +83,22 @@ export default function ConfirmationPage() {
             );
             const showData = await showResponse.json();
 
+            // Movie Details laden
+            const movieResponse = await fetch(
+              `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/movies/${showData.movie_id}`
+            );
+            const movieData = await movieResponse.json();
+
             return {
               ...booking,
               seat: {
                 ...seatData,
                 category: categoryData
               },
-              show: showData
+              show: {
+                ...showData,
+                movie: movieData
+              }
             };
           })
         );
