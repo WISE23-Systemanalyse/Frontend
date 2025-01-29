@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Show, Movie, Seat } from "@/types/index";
 import DatePicker from "@/components/movie-booking/date-picker";
@@ -32,72 +32,77 @@ export default function MovieDetail() {
   const [selectedShowId, setSelectedShowId] = useState<number | undefined>((showId)? parseInt(showId, 10) : undefined);
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
 
-  // Event handlers
-  const handleShowSelect = (showId: number, hallId: number) => {
-    console.log(showId, hallId);
-    setSelectedShowId(showId);
-  };
-  const handleCheckout = async () => {
-    try {
-      const reservationPromises = selectedSeats.map(async (seat) => {
-        const response = await fetch(`${process.env.BACKEND_URL}/seats/${seat.id}/reserve`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            seat_id: seat.id,
-            show_id: selectedShowId,
-          }),
-        });
-        if (response.status === 400) assert.fail('Sitzplatz bereits reserviert');
-        if (!response.ok) throw new Error('Fehler beim Buchen');
-      });
-
-      await Promise.all(reservationPromises);
-
-      // Navigate to the payment page if all seats are reserved successfully
-      router.push(`/checkout?seats=${selectedSeats.map(seat => seat.id).join(',')}&showId=${selectedShowId}`);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Ein Fehler ist aufgetreten"
-      );
-    }
-  };
-
-  const handleSeatSelection = useCallback((seats: Seat[]) => {
-    setSelectedSeats(seats);
-  }, []);
-
-  // Data fetching
-  React.useEffect(() => {
+  // Optimiere Movie und Shows Fetching
+  useEffect(() => {
     const fetchMovieAndShows = async () => {
       try {
         setIsLoading(true);
-        const movieResponse = await fetch(
-          `${process.env.BACKEND_URL}/movies/${params.id}`
-        );
-        if (!movieResponse.ok) throw new Error("Film nicht gefunden");
-        const movieData = await movieResponse.json();
-        setMovie(movieData);
+        setError(null);
 
-        const showsResponse = await fetch(
-          `${process.env.BACKEND_URL}/movies/${params.id}/shows`
-        );
-        if (!showsResponse.ok) throw new Error("Keine Vorstellungen gefunden");
-        const showsData = await showsResponse.json();
+        const [movieResponse, showsResponse] = await Promise.all([
+          fetch(`${process.env.BACKEND_URL}/movies/${params.id}`),
+          fetch(`${process.env.BACKEND_URL}/movies/${params.id}/shows`)
+        ]);
+
+        if (!movieResponse.ok) throw new Error("Film nicht gefunden");
+        if (!showsResponse.ok) throw new Error("Vorstellungen nicht gefunden");
+
+        const [movieData, showsData] = await Promise.all([
+          movieResponse.json(),
+          showsResponse.json()
+        ]);
+
+        setMovie(movieData);
         setShows(showsData);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Ein Fehler ist aufgetreten"
-        );
+        setError(err instanceof Error ? err.message : "Ein Fehler ist aufgetreten");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchMovieAndShows();
-  }, [params.id]);
+  }, [params.id]); // Nur von params.id abhängig
+
+  // Memoize die Callbacks
+  const handleShowSelect = useCallback((showId: number, hallId: number) => {
+    setSelectedShowId(showId);
+  }, []);
+
+  const handleSeatSelection = useCallback((seats: Seat[]) => {
+    setSelectedSeats(seats);
+  }, []);
+
+  const handleCheckout = useCallback(async () => {
+    if (!selectedShowId || selectedSeats.length === 0) return;
+
+    try {
+      setError(null);
+      const reservationPromises = selectedSeats.map(seat => 
+        fetch(`${process.env.BACKEND_URL}/seats/${seat.id}/reserve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            seat_id: seat.id,
+            show_id: selectedShowId,
+          }),
+        })
+      );
+
+      const responses = await Promise.all(reservationPromises);
+      
+      if (responses.some(r => r.status === 400)) {
+        throw new Error('Sitzplatz bereits reserviert');
+      }
+      if (responses.some(r => !r.ok)) {
+        throw new Error('Fehler beim Buchen');
+      }
+
+      router.push(`/checkout?seats=${selectedSeats.map(seat => seat.id).join(',')}&showId=${selectedShowId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ein Fehler ist aufgetreten");
+    }
+  }, [selectedShowId, selectedSeats, router]);
 
   React.useEffect(() => {
     setSelectedShowId(undefined);

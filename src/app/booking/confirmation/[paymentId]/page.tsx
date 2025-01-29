@@ -19,10 +19,14 @@ interface BookingDetails {
   seat_id: number;
   show_id: number;
   payment_id: string;
+  token: string;
   seat: {
     row_number: number;
     seat_number: number;
-    category: string;
+    category: {
+      category_name: string;
+      surcharge: number;
+    };
   };
   show: {
     start_time: string;
@@ -42,6 +46,8 @@ export default function ConfirmationPage() {
   const [confirmationData, setConfirmationData] = useState<ConfirmationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingDetails | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const fetchConfirmationData = async () => {
@@ -141,25 +147,12 @@ export default function ConfirmationPage() {
   const { payment, bookings } = confirmationData;
   const firstBooking = bookings[0];
 
-  const qrCodeData = JSON.stringify({
-    payment: {
-      id: payment.id,
-      amount: payment.amount.toFixed(2),
-      tax: payment.tax.toFixed(2),
-      method: payment.payment_method,
-      status: payment.payment_status,
-      time: new Date(payment.payment_time).toLocaleString('de-DE'),
-    },
-    bookings: bookings.map(booking => ({
+  const qrCodeData = JSON.stringify(
+    bookings.map(booking => ({
       bookingId: booking.id,
-      seat: booking.seat ? `Reihe ${booking.seat.row_number}, Platz ${booking.seat.seat_number}` : 'Unbekannter Platz',
-      category: typeof booking.seat?.category === 'object' ? (booking.seat.category as { category_name: string }).category_name : 'Standard'
-    })),
-    movie: firstBooking.show?.movie?.title || 'Unbekannter Film',
-    showTime: firstBooking.show?.start_time ? 
-      new Date(firstBooking.show.start_time).toLocaleString('de-DE') : 
-      'Zeitpunkt unbekannt'
-  });
+      token: booking.token
+    }))
+  );
 
   return (
     <div className="min-h-screen bg-neutral-900 p-4">
@@ -190,34 +183,62 @@ export default function ConfirmationPage() {
         <div className="space-y-4">
           <h3 className="font-semibold">Gebuchte Plätze:</h3>
           {bookings.map((booking) => (
-            <div key={booking.id} className="p-2 bg-gray-50 rounded">
-              <p>
-                {booking.seat ? 
-                  `Reihe ${booking.seat.row_number}, Platz ${booking.seat.seat_number}` :
-                  'Unbekannter Platz'
-                }
-                <span className="ml-2 text-gray-600">
-                  ({typeof booking.seat?.category === 'object' ? (booking.seat.category as { category_name: string }).category_name : 'Standard'})
-                </span>
-              </p>
+            <div 
+              key={booking.id} 
+              className="p-4 bg-gray-50 rounded flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => {
+                setSelectedBooking(booking);
+                setShowModal(true);
+              }}
+            >
+              <div>
+                <p className="font-medium">
+                  Reihe {booking.seat?.row_number}, Platz {booking.seat?.seat_number}
+                  <span className="ml-2 text-gray-600">
+                    ({booking.seat?.category?.category_name || 'Standard'})
+                  </span>
+                </p>
+              </div>
+              <div className="text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="flex justify-center mt-8">
-          <div className="p-4 bg-white rounded-lg shadow-lg">
-            <QRCode 
-              value={qrCodeData}
-              size={200}
-              level="H"
-              includeMargin={true}
-            />
-          </div>
-        </div>
+        {/* Modal für QR Code */}
+        {showModal && selectedBooking && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold">Ticket QR-Code</h3>
+                <p className="text-sm text-gray-600">
+                  Reihe {selectedBooking.seat?.row_number}, Platz {selectedBooking.seat?.seat_number}
+                </p>
+              </div>
+              
+              <div className="flex justify-center mb-4">
+                <QRCode 
+                  value={JSON.stringify({
+                    bookingId: selectedBooking.id,
+                    token: selectedBooking.token
+                  })}
+                  size={200}
+                  level="H"
+                />
+              </div>
 
-        <p className="text-center text-sm text-gray-600 mt-4">
-          Scannen Sie den QR-Code, um Ihre Buchungsdetails zu speichern
-        </p>
+              <button 
+                className="w-full py-2 bg-neutral-800 text-white rounded hover:bg-neutral-700 transition-colors"
+                onClick={() => setShowModal(false)}
+              >
+                Schließen
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

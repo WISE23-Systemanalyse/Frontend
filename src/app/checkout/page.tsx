@@ -127,7 +127,6 @@ export default function Checkout() {
   const createBookings = async (paymentId: string) => {
     console.log('Creating bookings for seats:', seats);
     
-    // Sitzpreise berechnen mit base_price + surcharge
     const bookingRequest = seats.map(seatId => {
       const seatDetail = seatDetails.find(detail => detail.id === seatId);
       if (!seatDetail) throw new Error(`Sitzdetails für Sitz ${seatId} nicht gefunden`);
@@ -139,7 +138,7 @@ export default function Checkout() {
         show_id: showId,
         user_id: 1, // TODO: Dynamischer User
         payment_id: paymentId,
-        price_eur: price // Preis in EUR (z.B. 15.00)
+        token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
       };
     });
 

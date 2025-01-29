@@ -45,12 +45,36 @@ export function HallLayout({ showID, onSeatSelectAction }: HallLayoutProps) {
   const isAdjacent = (seat: Seat) => {
     if (selectedSeats.length === 0) return true;
 
-    return selectedSeats.some((selectedSeat) => {
-      return (
-        selectedSeat.row_number === seat.row_number &&
-        Math.abs(selectedSeat.seat_number - seat.seat_number) === 1
+    // Finde die aktuelle Reihe, in der bereits Sitze ausgewählt wurden
+    const currentRow = selectedSeats[0].row_number;
+    
+    // Wenn der zu prüfende Sitz in einer anderen Reihe ist
+    if (seat.row_number !== currentRow) {
+      // Prüfe, ob in der aktuellen Reihe noch freie benachbarte Plätze verfügbar sind
+      const seatsInCurrentRow = seats.filter(s => 
+        s.row_number === currentRow && 
+        s.seat_status !== 'BOOKED' && 
+        s.seat_status !== 'RESERVED'
       );
-    });
+      
+      // Wenn es noch freie benachbarte Plätze gibt, erlaube keine neue Reihe
+      const hasAdjacentSeats = seatsInCurrentRow.some(s =>
+        selectedSeats.some(selected => 
+          Math.abs(selected.seat_number - s.seat_number) === 1
+        )
+      );
+      
+      if (hasAdjacentSeats) return false;
+      
+      // Wenn keine benachbarten Plätze mehr verfügbar sind, erlaube neue Reihe
+      return true;
+    }
+
+    // Für Sitze in der gleichen Reihe: Prüfe auf Nachbarschaft
+    return selectedSeats.some(
+      (selectedSeat) =>
+        Math.abs(selectedSeat.seat_number - seat.seat_number) === 1
+    );
   };
 
   const isSelectable = (seat: Seat) => {
@@ -60,6 +84,9 @@ export function HallLayout({ showID, onSeatSelectAction }: HallLayoutProps) {
   };
 
   const handleSeatClick = (seat: Seat) => {
+    // Prüfe zuerst, ob der Sitz überhaupt auswählbar ist
+    if (!isSelectable(seat)) return;
+    
     if (seat.seat_status === 'BOOKED') return;
 
     if (seat.seat_status === 'RESERVED') {
@@ -68,19 +95,16 @@ export function HallLayout({ showID, onSeatSelectAction }: HallLayoutProps) {
       return;
     }
     
-    setSelectedSeats(prev => {
-      const isSelected = prev.some(selectedSeat => selectedSeat.id === seat.id);
-      const newSeats = isSelected 
-        ? prev.filter(selectedSeat => selectedSeat.id !== seat.id)
-        : [...prev, seat];
-      
-      // Informiere die übergeordnete Komponente über die Änderung
-      if (onSeatSelectAction) {
-        onSeatSelectAction(newSeats);
-      }
-      
-      return newSeats;
-    });
+    const isSelected = selectedSeats.some(selectedSeat => selectedSeat.id === seat.id);
+    const newSeats = isSelected 
+      ? selectedSeats.filter(selectedSeat => selectedSeat.id !== seat.id)
+      : [...selectedSeats, seat];
+    
+    setSelectedSeats(newSeats);
+    
+    if (onSeatSelectAction) {
+      onSeatSelectAction(newSeats);
+    }
   };
 
   const isSeatSelected = (seatId: number) => {
@@ -189,22 +213,21 @@ export function HallLayout({ showID, onSeatSelectAction }: HallLayoutProps) {
                     }
 
                     const isSelected = isSeatSelected(seat.id);
-                    const canBeSelected = isSelectable(seat);
 
                     return (
                       <div
                         key={index}
-                        onClick={() => handleSeatClick(seat)}
+                        onClick={() => isSelectable(seat) && handleSeatClick(seat)}
                         className={`
                         w-12 h-12 rounded-md flex items-center justify-center cursor-pointer
                         transition-all duration-200
                         ${getSeatStyle(seat)}
                         ${isSelected ? "ring-2 ring-red-500 ring-offset-2" : ""}
-                        ${!isSelected && canBeSelected ? "opacity-100" : ""}
-                        ${!isSelected && !canBeSelected ? "opacity-50 cursor-not-allowed" : ""}
+                        ${!isSelected && isSelectable(seat) ? "opacity-100" : ""}
+                        ${!isSelected && !isSelectable(seat) ? "opacity-50 cursor-not-allowed" : ""}
                       `}
                         title={`Reihe ${row}, Sitz ${seatNum} (${seat.seat_type})${
-                          !canBeSelected ? " - Nicht auswählbar" : ""
+                          !isSelectable(seat) ? " - Nicht auswählbar" : ""
                         }`}
                       >
                         {seat.category_id === 1 && <Square size={16} className="text-white" />}
