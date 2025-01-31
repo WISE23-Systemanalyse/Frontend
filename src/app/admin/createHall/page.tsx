@@ -181,9 +181,7 @@ export default function CreateHall() {
               
               <SeatEditor
                 seats={selectedSeats}
-                onChange={(newSeats) => {
-                  setSelectedSeats(newSeats)
-                }}
+                onChangeAction={(newSeats) => setSelectedSeats(newSeats)}
                 hallId={0}
               />
             </div>

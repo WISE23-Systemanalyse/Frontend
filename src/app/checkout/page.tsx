@@ -1,32 +1,16 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import Script from 'next/script';
 import PriceOverview from '@/components/booking/PriceOverview';
 import SeatSelection from '@/components/booking/SeatSelection';
 
-interface PaymentData {
-  amount: number;
-  tax: number;
-  payment_method: string;
-  payment_status: string;
-  payment_details: any;
-}
-
-interface BookingData {
-  seat_id: number;
-  show_id: number;
-  user_id: number;
-  payment_id: string;
-}
-
-interface BookingRequest {
-  bookings: {
-    seat_id: number;
-    show_id: number;
-    user_id: number;
-    payment_id: string;
-  }[];
+interface Category {
+  id: number;
+  name: string;
+  price: number;
+  surcharge: number;
+  [key: string]: string | number; // für zusätzliche dynamische Eigenschaften
 }
 
 interface SeatWithCategory {
@@ -35,20 +19,77 @@ interface SeatWithCategory {
   seat_number: number;
   hall_id: number;
   category_id: number;
-  category: {
-    [x: string]: any;
-    surcharge: any;
-    id: number;
-    name: string;
-    price: number;
+  category: Category;
+}
+
+interface ShowDetails {
+  id: number;
+  base_price: number;
+  datetime: string;
+  movie_id: number;
+  hall_id: number;
+}
+
+// PayPal Typen hinzufügen
+interface PayPalActions {
+  order: {
+    create: (data: PayPalOrderConfig) => Promise<string>;
+    capture: () => Promise<PayPalCaptureResponse>;
   };
 }
 
-export default function Checkout() {
+interface PayPalOrderConfig {
+  intent: string;
+  purchase_units: {
+    amount: {
+      currency_code: string;
+      value: string;
+      breakdown: {
+        item_total: {
+          currency_code: string;
+          value: string;
+        };
+        tax_total: {
+          currency_code: string;
+          value: string;
+        };
+      };
+    };
+    items: {
+      name: string;
+      quantity: string;
+      unit_amount: {
+        currency_code: string;
+        value: string;
+      };
+    }[];
+  }[];
+}
+
+interface PayPalCaptureResponse {
+  payer: Record<string, unknown>;
+  status: string;
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div>Laden...</div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const params = useParams();
-  const seats = searchParams.get('seats')?.split(',').map(Number) || [];
+  
+  // Seats in useMemo einwickeln
+  const seats = useMemo(() => 
+    searchParams.get('seats')?.split(',').map(Number) || [],
+    [searchParams]
+  );
+  
   const showId = Number(searchParams.get('showId'));
   const [timeLeft, setTimeLeft] = useState(600);
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
@@ -56,7 +97,7 @@ export default function Checkout() {
   const [isLoading, setIsLoading] = useState(false);
   const [paypalInitialized, setPaypalInitialized] = useState(false);
   const [seatDetails, setSeatDetails] = useState<SeatWithCategory[]>([]);
-  const [showDetails, setShowDetails] = useState<any>(null);
+  const [showDetails, setShowDetails] = useState<ShowDetails | null>(null);
 
   const TAX_RATE = 0.19; // 19% MwSt
 
@@ -124,19 +165,19 @@ export default function Checkout() {
     fetchShowDetails();
   }, [showId]);
 
-  const createBookings = async (paymentId: string) => {
+  const createBookings = useCallback(async (paymentId: string) => {
     console.log('Creating bookings for seats:', seats);
     
     const bookingRequest = seats.map(seatId => {
       const seatDetail = seatDetails.find(detail => detail.id === seatId);
       if (!seatDetail) throw new Error(`Sitzdetails für Sitz ${seatId} nicht gefunden`);
       
-      const price = showDetails.base_price + (seatDetail.category?.surcharge || 0);
+      if (!showDetails) throw new Error('Showdetails nicht gefunden');
       
       return {
         seat_id: seatId,
         show_id: showId,
-        user_id: 1, // TODO: Dynamischer User
+        user_id: 1,
         payment_id: paymentId,
         token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
       };
@@ -169,15 +210,15 @@ export default function Checkout() {
       console.error('Full error:', error);
       throw error;
     }
-  };
+  }, [seats, seatDetails, showDetails, showId]);
 
-  const calculateTotal = () => {
+  const calculateTotal = useCallback(() => {
     if (!showDetails || !seatDetails.length) return 0;
     return seatDetails.reduce((total, seat) => {
       const seatPrice = showDetails.base_price + (seat.category?.surcharge || 0);
       return total + seatPrice;
     }, 0);
-  };
+  }, [showDetails, seatDetails]);
 
   useEffect(() => {
     const loadPayPalScript = async () => {
@@ -191,9 +232,8 @@ export default function Checkout() {
       try {
         setPaypalInitialized(true);
         
-        // @ts-ignore
         await window.paypal?.Buttons({
-          createOrder: (data: any, actions: any) => {
+          createOrder: (data: unknown, actions: PayPalActions) => {
             const items = seatDetails.map(seat => ({
               name: `Sitz R${seat.row_number} P${seat.seat_number} (${seat.category.category_name || 'Standard'})`,
               quantity: "1",
@@ -230,7 +270,7 @@ export default function Checkout() {
               }]
             });
           },
-          onApprove: async (data: any, actions: any) => {
+          onApprove: async (data: { orderID: string }, actions: PayPalActions) => {
             try {
               setIsLoading(true);
               const paypalDetails = await actions.order.capture();
@@ -291,7 +331,7 @@ export default function Checkout() {
     };
 
     loadPayPalScript();
-  }, [showDetails, seatDetails, paypalInitialized]);
+  }, [showDetails, seatDetails, paypalInitialized, calculateTotal, createBookings, router]);
 
   return (
     <div className="min-h-screen bg-neutral-900 p-4">

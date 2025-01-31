@@ -80,7 +80,7 @@ export default function EditHall() {
     }
 
     fetchHall()
-  }, [hallId, API_BASE_URL])
+  }, [hallId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -209,7 +209,7 @@ export default function EditHall() {
               
               <SeatEditor
                 seats={selectedSeats}
-                onChange={setSelectedSeats}
+                onChangeAction={setSelectedSeats}
                 hallId={parseInt(hallId as string)}
               />
             </div>

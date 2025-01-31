@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fetchShows } from './fetchdata'
+import Image from 'next/image'
 
 interface Show {
   id: number;
@@ -179,10 +180,11 @@ export default function Programm() {
                           {/* Linker Container: Filmbild */}
                           <div className="w-[100px] h-[150px] flex-shrink-0">
                             <div className="relative w-full h-full">
-                              <img
+                              <Image
                                 src={group.image_url}
                                 alt={group.title}
-                                className="object-cover w-full h-full"
+                                fill
+                                className="object-cover"
                                 loading="lazy"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;

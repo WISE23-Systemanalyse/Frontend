@@ -13,7 +13,7 @@ interface Seat {
 
 interface SeatEditorProps {
   seats: Seat[]
-  onChange: (seats: Seat[]) => void
+  onChangeAction: (seats: Seat[]) => void
   hallId: number
 }
 
@@ -30,7 +30,7 @@ const CATEGORY = {
   VIP: 3
 } as const
 
-export function SeatEditor({ seats, onChange, hallId }: SeatEditorProps) {
+export function SeatEditor({ seats, onChangeAction, hallId }: SeatEditorProps) {
   const [rows, setRows] = useState(5)
   const [seatsPerRow, setSeatsPerRow] = useState(15)
   const [selectedCategory, setSelectedCategory] = useState<number>(CATEGORY.STANDARD)
@@ -38,48 +38,44 @@ export function SeatEditor({ seats, onChange, hallId }: SeatEditorProps) {
   const [noneSeats, setNoneSeats] = useState<Set<string>>(new Set())
   const [isInitialized, setIsInitialized] = useState(false)
 
-  const loadExistingSeats = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/seats`)
-      if (!response.ok) throw new Error('Sitze konnten nicht geladen werden')
-      const data = await response.json()
-      
-      const hallSeats = data.filter((seat: Seat) => seat.hall_id === hallId)
-      
-      if (hallSeats.length > 0) {
-        const maxRow = Math.max(...hallSeats.map((seat: Seat) => seat.row_number))
-        const maxSeatsInRow = Math.max(...hallSeats.map((seat: Seat) => seat.seat_number))
-        setRows(maxRow)
-        setSeatsPerRow(maxSeatsInRow)
-
-        // Initialisiere die "Keine Sitze" Set mit allen möglichen Positionen
-        const nonePositions = new Set<string>()
+  useEffect(() => {
+    const loadExistingSeats = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/seats`)
+        if (!response.ok) throw new Error('Sitze konnten nicht geladen werden')
+        const data = await response.json()
         
-        // Füge zuerst alle möglichen Positionen als "Keine Sitze" hinzu
-        for (let row = 1; row <= maxRow; row++) {
-          for (let seat = 1; seat <= maxSeatsInRow; seat++) {
-            nonePositions.add(`${row}-${seat}`)
+        const hallSeats = data.filter((seat: Seat) => seat.hall_id === hallId)
+        
+        if (hallSeats.length > 0) {
+          const maxRow = Math.max(...hallSeats.map((seat: Seat) => seat.row_number))
+          const maxSeatsInRow = Math.max(...hallSeats.map((seat: Seat) => seat.seat_number))
+          setRows(maxRow)
+          setSeatsPerRow(maxSeatsInRow)
+
+          const nonePositions = new Set<string>()
+          
+          for (let row = 1; row <= maxRow; row++) {
+            for (let seat = 1; seat <= maxSeatsInRow; seat++) {
+              nonePositions.add(`${row}-${seat}`)
+            }
           }
+
+          hallSeats.forEach((seat: Seat) => {
+            if (seat.category_id !== CATEGORY.NONE) {
+              nonePositions.delete(`${seat.row_number}-${seat.seat_number}`)
+            }
+          })
+
+          setNoneSeats(nonePositions)
         }
 
-        // Entferne dann die Positionen, an denen tatsächlich Sitze sind
-        hallSeats.forEach((seat: Seat) => {
-          if (seat.category_id !== CATEGORY.NONE) {
-            nonePositions.delete(`${seat.row_number}-${seat.seat_number}`)
-          }
-        })
-
-        setNoneSeats(nonePositions)
+        onChangeAction(hallSeats.filter((seat: Seat) => seat.category_id !== CATEGORY.NONE))
+      } catch (error) {
+        console.error('Fehler beim Laden der Sitze:', error)
       }
-
-      // Filtere NONE-Sitze aus der Liste heraus
-      onChange(hallSeats.filter((seat: Seat) => seat.category_id !== CATEGORY.NONE))
-    } catch (error) {
-      console.error('Fehler beim Laden der Sitze:', error)
     }
-  }
 
-  useEffect(() => {
     if (hallId === 0 && !isInitialized) {
       const initialSeats: Seat[] = []
       let nextId = -1
@@ -96,14 +92,13 @@ export function SeatEditor({ seats, onChange, hallId }: SeatEditorProps) {
         }
       }
 
-      onChange(initialSeats)
+      onChangeAction(initialSeats)
       setIsInitialized(true)
     } else if (hallId !== 0 && !isInitialized) {
-      // Nur laden wenn noch nicht initialisiert
       loadExistingSeats()
       setIsInitialized(true)
     }
-  }, [hallId]) // Nur von hallId abhängig machen
+  }, [hallId, isInitialized, onChangeAction, rows, seatsPerRow])
 
   const updateSeats = (newRows: number, newSeatsPerRow: number) => {
     const existingSeats = [...seats]
@@ -152,7 +147,7 @@ export function SeatEditor({ seats, onChange, hallId }: SeatEditorProps) {
     }
 
     setNoneSeats(updatedNoneSeats)
-    onChange(newSeats)
+    onChangeAction(newSeats)
   }
 
   const updateRows = (newRows: number) => {
@@ -214,34 +209,8 @@ export function SeatEditor({ seats, onChange, hallId }: SeatEditorProps) {
       return a.row_number - b.row_number
     })
 
-    onChange(newSeats)
+    onChangeAction(newSeats)
   }
-
-  const getCategoryStyle = (categoryId: number) => {
-    switch (categoryId) {
-      case CATEGORY.STANDARD:
-        return 'bg-emerald-600 hover:bg-emerald-500';
-      case CATEGORY.PREMIUM:
-        return 'bg-blue-600 hover:bg-blue-500';
-      case CATEGORY.VIP:
-        return 'bg-purple-600 hover:bg-purple-500';
-      default:
-        return 'opacity-10 hover:opacity-25';
-    }
-  };
-
-  const getCategoryIcon = (categoryId: number) => {
-    switch (categoryId) {
-      case CATEGORY.STANDARD:
-        return <Square size={12} className="text-white" />;
-      case CATEGORY.PREMIUM:
-        return <Armchair size={14} className="text-white" />;
-      case CATEGORY.VIP:
-        return <Crown size={14} className="text-white" />;
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className="space-y-6">

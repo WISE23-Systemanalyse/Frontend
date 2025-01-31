@@ -147,13 +147,7 @@ export default function ConfirmationPage() {
   const { payment, bookings } = confirmationData;
   const firstBooking = bookings[0];
 
-  const qrCodeData = JSON.stringify(
-    bookings.map(booking => ({
-      bookingId: booking.id,
-      token: booking.token
-    }))
-  );
-
+  
   return (
     <div className="min-h-screen bg-neutral-900 p-4">
       <div className="max-w-2xl mx-auto bg-white rounded-lg p-6 space-y-6">

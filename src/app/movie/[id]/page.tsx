@@ -7,7 +7,6 @@ import TimePicker from "@/components/movie-booking/time-picker";
 import MovieInfo from "@/components/movie-booking/movie-info";
 import { HallLayout } from "@/components/hall/HallLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import assert from "assert";
 
 export default function MovieDetail() {
   const params = useParams();
@@ -65,7 +64,7 @@ export default function MovieDetail() {
   }, [params.id]); // Nur von params.id abhängig
 
   // Memoize die Callbacks
-  const handleShowSelect = useCallback((showId: number, hallId: number) => {
+  const handleShowSelect = useCallback((showId: number) => {
     setSelectedShowId(showId);
   }, []);
 
