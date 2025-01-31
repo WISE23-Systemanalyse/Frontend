@@ -96,6 +96,62 @@ export default function CreateScreening() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validierung der Eingaben
+    if (!screening.movieId) {
+      setToast({
+        message: 'Bitte wählen Sie einen Film aus',
+        variant: 'error',
+        isVisible: true
+      });
+      setTimeout(() => {
+        setToast(prev => ({ ...prev, isVisible: false }));
+      }, 3000); // 3 Sekunden
+      return;
+    }
+
+    if (!screening.theaterId) {
+      setToast({
+        message: 'Bitte wählen Sie einen Saal aus',
+        variant: 'error',
+        isVisible: true
+      });
+      setTimeout(() => {
+        setToast(prev => ({ ...prev, isVisible: false }));
+      }, 3000);
+      return;
+    }
+
+    if (!screening.date || !screening.time) {
+      setToast({
+        message: 'Bitte wählen Sie Datum und Uhrzeit aus',
+        variant: 'error',
+        isVisible: true
+      });
+      setTimeout(() => {
+        setToast(prev => ({ ...prev, isVisible: false }));
+      }, 3000);
+      return;
+    }
+
+    // Validierung für Vorstellungen in der Vergangenheit
+    const [year, month, day] = screening.date.split('-').map(Number);
+    const [hours, minutes] = screening.time.split(':').map(Number);
+    const selectedDateTime = new Date(year, month - 1, day, hours, minutes);
+    const now = new Date();
+
+    if (selectedDateTime < now) {
+      setToast({
+        message: 'Das ausgewählte Datum liegt in der Vergangenheit',
+        variant: 'error',
+        isVisible: true
+      });
+      setTimeout(() => {
+        setToast(prev => ({ ...prev, isVisible: false }));
+      }, 3000);
+      return;
+    }
+
     setIsLoading(true);
     setToast({
       message: 'Vorstellung wird erstellt...',
@@ -104,14 +160,11 @@ export default function CreateScreening() {
     });
 
     try {
-      const [year, month, day] = screening.date.split('-').map(Number);
-      const [hours, minutes] = screening.time.split(':').map(Number);
-      
       const dateTime = new Date(Date.UTC(year, month - 1, day, hours, minutes));
       
       const showData = {
-        movie_id: screening.movieId,
-        hall_id: screening.theaterId,
+        movie_id: parseInt(screening.movieId),
+        hall_id: parseInt(screening.theaterId),
         start_time: dateTime.toISOString()
       };
 
@@ -123,9 +176,11 @@ export default function CreateScreening() {
         isVisible: true
       });
 
+      // Längere Anzeige der Erfolgsmeldung
       setTimeout(() => {
-        router.push('/admin/shows')
-      }, 500);
+        setToast(prev => ({ ...prev, isVisible: false }));
+        router.push('/admin/shows');
+      }, 2000);
 
     } catch (err) {
       console.error(err);
@@ -134,6 +189,10 @@ export default function CreateScreening() {
         variant: 'error',
         isVisible: true
       });
+      // Längere Anzeige der Fehlermeldung
+      setTimeout(() => {
+        setToast(prev => ({ ...prev, isVisible: false }));
+      }, 3000);
     } finally {
       setIsLoading(false);
     }
