@@ -1,42 +1,56 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import VerifyEmailForm from './VerifyEmailForm';
 
 export default function SignUp() {
-  const router = useRouter();
   const [error, setError] = useState('');
+  const [showVerification, setShowVerification] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
     
     try {
-      const res = await fetch('http://localhost:8000/signup', {
+      const res = await fetch(`${process.env.BACKEND_URL}/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: formData.get('email'),
+          email: email,
           password: formData.get('password'),
           userName: formData.get('userName')
         }),
       });
 
       if (res.ok) {
-        const email = formData.get('email') as string;
-        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+        setUserEmail(email);
+        setShowVerification(true);
       } else {
         const data = await res.json();
-        console.log(data);
-        setError(data.error
-         || 'Registration failed');
+        setError(data.error || 'Registration failed');
       }
     } catch (error) {
-      setError('An error occurred during registration');
+      setError('An error occurred during registration' + error);
     }
   };
+
+  if (showVerification) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <div className="w-full max-w-md space-y-8 p-6 bg-white rounded-xl shadow-md">
+          <h2 className="text-2xl font-bold text-center">Verify Your Email</h2>
+          <p className="text-center text-gray-600">
+            We&apos;ve sent a 6-digit code to your email. Please enter it below to verify your account.
+          </p>
+          <VerifyEmailForm email={userEmail} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">

@@ -2,7 +2,7 @@
 import React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { verifyEmail } from "./actions.ts"
+import { verifyEmail } from "./actions"
 
 export default function VerifyEmailForm({ email }: { email: string }) {
   const [error, setError] = useState("")

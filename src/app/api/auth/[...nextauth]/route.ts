@@ -1,6 +1,19 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 
+declare module "next-auth" {
+  interface JWT {
+    id: string
+    email: string
+    accessToken: string
+  }
+  interface User {
+    id: string
+    email: string
+    accessToken: string
+  }
+}
+
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
@@ -10,13 +23,16 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
         try {
           const res = await fetch(`${process.env.BACKEND_URL}/signin`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              email: credentials?.email,
-              password: credentials?.password,
+              email: credentials.email,
+              password: credentials.password,
             }),
           })
 
@@ -29,6 +45,9 @@ const handler = NextAuth({
           // Decode the JWT token to get user information
           const tokenString = data.token.token
           return {
+            id: data.userId || '', // Ensure you have userId in your API response
+            email: data.email,
+            userName: data.userName,
             accessToken: tokenString,
           }
         } catch (error) {
@@ -45,15 +64,15 @@ const handler = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.accessToken = user.accessToken
+
       }
       return token
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken
+      session.user.accessToken = token.accessToken
       return session
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
 })
 
 export const GET = handler

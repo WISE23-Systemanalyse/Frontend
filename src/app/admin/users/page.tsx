@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Search, UserCog, Trash2 } from "lucide-react"
 import { fetchUsers, deleteUser } from './fetchdata'
+import Image from 'next/image'
 
 interface User {
   id: number
@@ -41,7 +42,7 @@ export default function AdminUsers() {
     }
 
     loadUsers()
-  }, [])
+  }, [searchTerm] )
 
   // Filter users based on search
   useEffect(() => {
@@ -131,14 +132,12 @@ export default function AdminUsers() {
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full overflow-hidden bg-neutral-600 flex-shrink-0">
                         {user.imageUrl ? (
-                          <img
+                          <Image
                             src={user.imageUrl}
                             alt={user.userName || user.email}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = '/default-avatar.png';
-                            }}
+                            width={48}
+                            height={48}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-neutral-600 text-white text-lg font-medium">

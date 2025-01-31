@@ -15,7 +15,7 @@ const ProfilePage = () => {
     },
   });
 
-  const AccessToken = session?.accessToken;
+  const AccessToken = session?.user.accessToken;
   useEffect(() => {
     const fetchUser = async () => {
       try {
