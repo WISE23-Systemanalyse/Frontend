@@ -3,6 +3,8 @@ import React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { verifyEmail } from "./actions"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 
 export default function VerifyEmailForm({ email }: { email: string }) {
   const [error, setError] = useState("")
@@ -14,42 +16,52 @@ export default function VerifyEmailForm({ email }: { email: string }) {
     if (result.success) {
       router.push("/auth/signin")
     } else {
-      setError(result.error || "An error occurred during verification")
+      setError(result.error || "Ein Fehler ist aufgetreten")
     }
   }
 
   return (
     <form action={handleSubmit} className="space-y-4">
-      {error && <p className="text-red-500 text-center">{error}</p>}
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium">
-          Email
+      {error && (
+        <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded">
+          {error}
+        </div>
+      )}
+      
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-400">
+          E-Mail
         </label>
-        <input
-          id="email"
+        <Input
           name="email"
           type="email"
           value={email}
           readOnly
-          className="mt-1 block w-full rounded-md border p-2 bg-gray-100"
+          className="bg-[#141414] border-zinc-800 text-white"
         />
       </div>
-      <div>
-        <label htmlFor="code" className="block text-sm font-medium">
-          Verification Code
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-400">
+          Bestätigungscode
         </label>
-        <input
-          id="code"
+        <Input
           name="code"
           type="text"
           required
           maxLength={6}
-          className="mt-1 block w-full rounded-md border p-2 text-center text-2xl tracking-widest"
+          className="bg-[#141414] border-zinc-800 text-white focus:ring-red-500 focus:border-red-500 
+                   text-center text-2xl tracking-widest"
+          placeholder="••••••"
         />
       </div>
-      <button type="submit" className="w-full bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600">
-        Verify Email
-      </button>
+
+      <Button 
+        type="submit"
+        className="w-full bg-red-600 hover:bg-red-700 text-white"
+      >
+        E-Mail bestätigen
+      </Button>
     </form>
   )
 }

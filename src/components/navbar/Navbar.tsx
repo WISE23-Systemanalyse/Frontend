@@ -1,9 +1,10 @@
 "use client";
 import * as React from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Film, User } from 'lucide-react'
-
+import { useSession } from 'next-auth/react'
+import { useAuthSignOut } from '@/providers/auth'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,17 +21,19 @@ const navItems = [
   { name: 'Kontakt', href: '/contact' },
 ]
 
-const ProfileITems = [
-    { name: 'Your Profile', href: '/profile' },
-    { name: 'Settings', href: '/settings' },
-    { name: 'Sign out', href: '/' },
-]
-
-
-
 export default function Navbar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
+  const { data: session } = useSession()
+  const handleSignOut = useAuthSignOut()
+
+  const profileItems = session ? [
+    { name: 'Profil', href: '/profile', onClick: undefined },
+    { name: 'Ausloggen', href: '#', onClick: handleSignOut }
+  ] : [
+    { name: 'Anmelden', href: '/auth/signin', onClick: undefined }
+  ]
 
   return (
     <nav className="bg-black text-white sticky top-0 z-10">
@@ -64,25 +67,30 @@ export default function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="ghost" 
-                    className="flex text-sm rounded-full text-white hover:bg-red-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    className="flex text-sm rounded-full text-white hover:bg-red-500/10 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
-                    <span className="sr-only">Open user menu</span>
-                    {
-                      
-                    }
+                    <span className="sr-only">Benutzermenü öffnen</span>
                     <User className="h-6 w-6" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-[#3C3C3C] border-0">
-                  <DropdownMenuItem className="hover:bg-red-500 focus:bg-red-500">
-                    <Link href="/profile" className="w-full text-white">Your Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="hover:bg-red-500 focus:bg-red-500">
-                    <Link href="/settings" className="w-full text-white">Settings</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="hover:bg-red-500 focus:bg-red-500">
-                    <Link href="/sign-out" className="w-full text-white">Sign out</Link>
-                  </DropdownMenuItem>
+                <DropdownMenuContent align="end" className="bg-black border border-zinc-800">
+                  {profileItems.map((item) => (
+                    <DropdownMenuItem 
+                      key={item.name}
+                      className="hover:bg-red-500/10 focus:bg-red-500/10"
+                      onClick={item.onClick}
+                    >
+                      {item.onClick ? (
+                        <span className="w-full text-white cursor-pointer">
+                          {item.name}
+                        </span>
+                      ) : (
+                        <Link href={item.href} className="w-full text-white">
+                          {item.name}
+                        </Link>
+                      )}
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -90,10 +98,10 @@ export default function Navbar() {
           <div className="-mr-2 flex items-center sm:hidden">
             <Button
               variant="ghost"
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              <span className="sr-only">Open main menu</span>
+              <span className="sr-only">Hauptmenü öffnen</span>
               {isMobileMenuOpen ? (
                 <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -116,38 +124,35 @@ export default function Navbar() {
               key={item.name}
               href={item.href}
               className={cn(
-                'block pl-3 pr-4 py-2 border-l-4 text-base font-medium',
+                'block px-3 py-2 text-base font-medium border-l-4',
                 pathname === item.href
-                  ? 'bg-primary-foreground border-primary text-primary'
-                  : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                  ? 'border-red-500 text-red-500 bg-red-500/10'
+                  : 'border-transparent text-gray-400 hover:text-white hover:bg-red-500/10 hover:border-red-500'
               )}
             >
               {item.name}
             </Link>
           ))}
         </div>
-        <div className="pt-4 pb-3 border-t border-gray-200">
-          <div className="flex items-center px-4">
-            <div className="flex-shrink-0">
-              <User className="h-10 w-10 rounded-full" />
-            </div>
-            <div className="ml-3">
-              <div className="text-base font-medium text-gray-800">User Name</div>
-              <div className="text-sm font-medium text-gray-500">user@example.com</div>
-            </div>
-          </div>
-          <div className="mt-3 space-y-1">
-            {
-                ProfileITems.map((item) => (
-                    <Link
-                        key={item.name}
-                        href={item.href}
-                        className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-                    >
-                        {item.name}
-                    </Link>
-                ))
-            }
+        
+        {/* Mobile profile menu */}
+        <div className="pt-4 pb-3 border-t border-zinc-800">
+          <div className="space-y-1">
+            {profileItems.map((item) => (
+              <div
+                key={item.name}
+                onClick={item.onClick}
+                className="block px-3 py-2 text-base font-medium text-gray-400 hover:text-white hover:bg-red-500/10 cursor-pointer"
+              >
+                {item.onClick ? (
+                  <span>{item.name}</span>
+                ) : (
+                  <Link href={item.href}>
+                    {item.name}
+                  </Link>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>

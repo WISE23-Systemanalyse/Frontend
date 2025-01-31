@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import VerifyEmailForm from './VerifyEmailForm';
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function SignUp() {
   const [error, setError] = useState('');
@@ -40,74 +43,100 @@ export default function SignUp() {
 
   if (showVerification) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="w-full max-w-md space-y-8 p-6 bg-white rounded-xl shadow-md">
-          <h2 className="text-2xl font-bold text-center">Verify Your Email</h2>
-          <p className="text-center text-gray-600">
-            We&apos;ve sent a 6-digit code to your email. Please enter it below to verify your account.
-          </p>
-          <VerifyEmailForm email={userEmail} />
-        </div>
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-[#2C2C2C] border-0">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-white text-center">
+              E-Mail bestätigen
+            </CardTitle>
+            <p className="text-sm text-gray-400 text-center">
+              Wir haben einen 6-stelligen Code an Ihre E-Mail-Adresse gesendet.
+            </p>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <VerifyEmailForm email={userEmail} />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center">
-      <div className="w-full max-w-md space-y-8 p-6 bg-white rounded-xl shadow-md">
-        <h2 className="text-2xl font-bold text-center">Sign Up</h2>
-        {error && <p className="text-red-500 text-center">{error}</p>}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="mt-1 block w-full rounded-md border p-2"
-            />
-          </div>
-          <div>
-            <label htmlFor="userName" className="block text-sm font-medium">
-              Username
-            </label>
-            <input
-              id="userName"
-              name="userName"
-              type="text"
-              required
-              className="mt-1 block w-full rounded-md border p-2"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              className="mt-1 block w-full rounded-md border p-2"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600"
-          >
-            Sign Up
-          </button>
-        </form>
-        <p className="text-center">
-          Already have an account?{' '}
-          <Link href="/auth/signin" className="text-blue-500 hover:underline">
-            Sign In
-          </Link>
-        </p>
-      </div>
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-[#2C2C2C] border-0">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-white text-center">
+            Registrieren
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {error && (
+            <div className="mb-4 p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded">
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-white mb-1">
+                E-Mail
+              </label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                required
+                className="bg-[#3C3C3C] text-white border-0 focus:ring-0 focus:ring-white/20 placeholder:text-gray-400"
+                placeholder="ihre@email.de"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="userName" className="block text-sm font-medium text-white mb-1">
+                Benutzername
+              </label>
+              <Input
+                id="userName"
+                name="userName"
+                type="text"
+                required
+                className="bg-[#3C3C3C] text-white border-0 focus:ring-0 focus:ring-white/20 placeholder:text-gray-400"
+                placeholder="Benutzername"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-white mb-1">
+                Passwort
+              </label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="bg-[#3C3C3C] text-white border-0 focus:ring-0 focus:ring-white/20 placeholder:text-gray-400"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <Button 
+              type="submit"
+              className="w-full bg-white hover:bg-white/90 text-black transition-colors"
+            >
+              Registrieren
+            </Button>
+
+            <div className="text-center text-sm text-gray-400">
+              Bereits registriert?{' '}
+              <Link 
+                href="/auth/signin" 
+                className="text-white hover:text-gray-300"
+              >
+                Anmelden
+              </Link>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
