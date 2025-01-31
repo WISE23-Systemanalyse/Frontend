@@ -23,8 +23,9 @@ const navItems = [
 const ProfileITems = [
     { name: 'Your Profile', href: '/profile' },
     { name: 'Settings', href: '/settings' },
-    { name: 'Sign out', href: '/home' },
-    ]
+    { name: 'Sign out', href: '/' },
+]
+
 
 
 export default function Navbar() {
@@ -66,6 +67,9 @@ export default function Navbar() {
                     className="flex text-sm rounded-full text-white hover:bg-red-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
                     <span className="sr-only">Open user menu</span>
+                    {
+                      
+                    }
                     <User className="h-6 w-6" />
                   </Button>
                 </DropdownMenuTrigger>

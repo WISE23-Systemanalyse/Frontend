@@ -7,6 +7,7 @@ import {
   Calendar,
   LayoutDashboard,
   Sofa,
+  BookOpen,
 } from 'lucide-react'
 
 export default function AdminLayout({
@@ -114,6 +115,20 @@ export default function AdminLayout({
             <Users size={20} className="min-w-[20px]" />
             <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
               Benutzer
+            </span>
+          </Link>
+
+          <Link href="/admin/booking"
+            className={`
+              flex items-center
+              px-3 py-2 rounded-md
+              transition-colors
+              ${isActive('/admin/booking')}
+            `}
+          >
+            <BookOpen size={20} className="min-w-[20px]" />
+            <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+              Buchungen
             </span>
           </Link>
         </nav>

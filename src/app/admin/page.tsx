@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Card } from "@/components/ui/card"
 import { useRouter } from 'next/navigation'
-import { Film, Sofa, Calendar, Users, ArrowRight } from 'lucide-react'
+import { Film, Sofa, Calendar, Users, ArrowRight, BookOpen } from 'lucide-react'
 
 interface DashboardStats {
   activeMovies: number
@@ -19,28 +19,40 @@ const dashboardItems = [
     description: 'Filme verwalten, hinzufügen und bearbeiten',
     icon: Film,
     color: 'bg-blue-500',
-    link: '/admin/movies'
+    link: '/admin/movies',
+    width: 'md:col-span-1'
   },
   {
     title: 'Säle',
     description: 'Kinosäle und Sitzplätze verwalten',
     icon: Sofa,
     color: 'bg-emerald-500',
-    link: '/admin/halls'
+    link: '/admin/halls',
+    width: 'md:col-span-1'
   },
   {
     title: 'Vorstellungen',
     description: 'Filmvorstellungen und Spielzeiten verwalten',
     icon: Calendar,
     color: 'bg-purple-500',
-    link: '/admin/shows'
+    link: '/admin/shows',
+    width: 'md:col-span-1'
   },
   {
     title: 'Benutzer',
     description: 'Benutzerverwaltung und Berechtigungen',
     icon: Users,
     color: 'bg-amber-500',
-    link: '/admin/users'
+    link: '/admin/users',
+    width: 'md:col-span-1'
+  },
+  {
+    title: 'Buchungen',
+    description: 'Alle Buchungen und Reservierungen verwalten',
+    icon: BookOpen,
+    color: 'bg-pink-500',
+    link: '/admin/booking',
+    width: 'md:col-span-2'
   }
 ]
 
@@ -202,7 +214,7 @@ export default function AdminDashboard() {
           {dashboardItems.map((item, index) => (
             <Card
               key={index}
-              className="bg-[#2C2C2C] border-0 hover:bg-[#3C3C3C] transition-all duration-300 cursor-pointer group"
+              className={`bg-[#2C2C2C] border-0 hover:bg-[#3C3C3C] transition-all duration-300 cursor-pointer group ${item.width}`}
               onClick={() => router.push(item.link)}
             >
               <div className="p-6">

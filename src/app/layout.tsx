@@ -3,7 +3,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
-import { Toast } from "@/components/ui/toast"
+import { Toast } from "@/components/ui/toast";
+import { NextAuthProvider }from "@/providers/auth";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -31,10 +32,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-red-300`}
       >
+        <NextAuthProvider>
         <Navbar />
         {children}
         <Footer/>
         <Toast isVisible={false} message="test" />
+        </NextAuthProvider>
       </body>
     </html>
   );

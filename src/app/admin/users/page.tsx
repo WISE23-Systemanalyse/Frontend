@@ -42,7 +42,7 @@ export default function AdminUsers() {
     }
 
     loadUsers()
-  }, [])
+  }, [searchTerm] )
 
   // Filter users based on search
   useEffect(() => {
@@ -138,10 +138,8 @@ export default function AdminUsers() {
                             width={48}
                             height={48}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = '/default-avatar.png';
-                            }}
+                            width={48}
+                            height={48}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-neutral-600 text-white text-lg font-medium">
