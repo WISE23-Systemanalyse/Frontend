@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Search, ChevronLeft, ChevronDown, ChevronRight } from "lucide-react"
 import { useRouter } from 'next/navigation'
 import { fetchBookingDetails, fetchMovies } from './fetchdata'
+import Image from 'next/image'
 
 interface Booking {
   booking_id: number
@@ -185,7 +186,7 @@ export default function AdminBookings() {
                         {show.movie && (
                           <div className="w-16 h-24 rounded-md overflow-hidden flex-shrink-0 bg-neutral-800">
                             {show.movie.imageUrl ? (
-                              <img 
+                              <Image 
                                 src={show.movie.imageUrl} 
                                 alt={show.movie.title}
                                 className="w-full h-full object-cover"
@@ -243,7 +244,7 @@ export default function AdminBookings() {
                             <div className="flex justify-between items-start">
                               <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-full overflow-hidden">
-                                  <img 
+                                  <Image 
                                     src={booking.image_url} 
                                     alt={booking.user_name}
                                     className="w-full h-full object-cover"

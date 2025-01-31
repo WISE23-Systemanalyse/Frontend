@@ -4,7 +4,7 @@ import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import Script from 'next/script';
 import PriceOverview from '@/components/booking/PriceOverview';
 import SeatSelection from '@/components/booking/SeatSelection';
-
+import { useSession } from 'next-auth/react';
 interface Category {
   id: number;
   name: string;
@@ -80,6 +80,8 @@ export default function CheckoutPage() {
 }
 
 function CheckoutContent() {
+  const { data: session } = useSession();
+  const user = session?.user;
   const searchParams = useSearchParams();
   const router = useRouter();
   const params = useParams();
@@ -177,7 +179,7 @@ function CheckoutContent() {
       return {
         seat_id: seatId,
         show_id: showId,
-        user_id: 1,
+        user_id: user?.id,
         payment_id: paymentId,
         token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
       };
