@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Search, Star, Clock, ChevronRight } from "lucide-react"
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface Movie {
   id: number
@@ -238,13 +239,12 @@ const MovieCard = ({ movie, className }: { movie: Movie; className?: string }) =
       `}>
         {/* Bild-Container mit exaktem 500x750 Verhältnis (2:3) */}
         <div className="relative pt-[150%] bg-[#1C1C1C] overflow-hidden">
-          <img
+          <Image
             src={movie.imageUrl}
             alt={movie.title}
-            width={500}
-            height={750}
-            className="absolute top-0 left-0 w-full h-full object-cover
-                     transition-transform duration-500 group-hover:scale-110"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
             loading="lazy"
             onError={(e) => {
               const target = e.target as HTMLImageElement;

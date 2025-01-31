@@ -19,10 +19,6 @@ export default function SeatSelector() {
     setSeats(generateSeats())
   }, [])
 
-  useEffect(() => {
-    updateAvailableSeats()
-  }, [seatCount])
-
   const generateSeats = (): Seat[] => {
     const generatedSeats: Seat[] = []
     for (let row = 0; row < 10; row++) {
@@ -32,32 +28,6 @@ export default function SeatSelector() {
       }
     }
     return generatedSeats
-  }
-
-  const findAvailableSeats = (count: number): Seat[] => {
-    for (let row = 0; row < 10; row++) {
-      for (let col = 0; col <= 10 - count; col++) {
-        const possibleSeats = seats.filter(
-          (seat) => seat.row === row && seat.col >= col && seat.col < col + count
-        )
-        if (possibleSeats.length === count && possibleSeats.every(seat => seat.status === "available")) {
-          return possibleSeats
-        }
-      }
-    }
-    return []
-  }
-
-  const updateAvailableSeats = () => {
-    const availableSeats = findAvailableSeats(seatCount)
-    setSeats(prevSeats => prevSeats.map(seat => ({
-      ...seat,
-      status: 
-        seat.status === "selected" ? "available" :
-        availableSeats.some(s => s.id === seat.id) ? "available" :
-        seat.status === "taken" ? "taken" : "unavailable"
-    })))
-    setSelectedSeats([])
   }
 
   const toggleSeat = (seatId: string) => {

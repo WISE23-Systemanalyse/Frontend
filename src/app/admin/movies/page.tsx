@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Toast } from "@/components/ui/toast"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import Image from 'next/image'
 
 interface Movie {
   id: string
@@ -135,10 +136,13 @@ export default function MoviesOverview() {
             {movies.map(movie => (
               <div key={movie.id} className="group relative">
                 <div className="aspect-[2/3] overflow-hidden rounded-md">
-                  <img 
+                  <Image 
                     src={movie.imageUrl} 
                     alt={movie.title}
+                    width={500}
+                    height={750}
                     className="h-full w-full object-cover transition-all duration-300 group-hover:scale-110"
+                    priority
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 </div>

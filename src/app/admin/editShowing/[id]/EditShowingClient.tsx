@@ -147,7 +147,7 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
         console.error('Fehler beim Laden der Daten:', err)
         setError('Fehler beim Laden der Daten')
       })
-  }, [params.id, show?.movie_id, show?.hall_id])
+  }, [params.id, show?.movie_id, show?.hall_id, show])
 
   const handleSubmit = async () => {
     if (!selectedMovie || !selectedHall || !date || !time) {

@@ -29,7 +29,8 @@ export default function CreateScreening() {
     movieId: '',
     theaterId: '',
     date: '',
-    time: ''
+    time: '',
+    basePrice: ''
   })
   const [halls, setHalls] = useState<Hall[]>([]);
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -165,7 +166,8 @@ export default function CreateScreening() {
       const showData = {
         movie_id: parseInt(screening.movieId),
         hall_id: parseInt(screening.theaterId),
-        start_time: dateTime.toISOString()
+        start_time: dateTime.toISOString(),
+        base_price: parseFloat(screening.basePrice)
       };
 
       await createShow(showData);
@@ -289,6 +291,21 @@ export default function CreateScreening() {
                   onChange={(e) => setScreening(prev => ({ ...prev, time: e.target.value }))}
                   className="bg-[#3C3C3C] text-white border-0"
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm text-gray-400">Basispreis (€)</label>
+                <Input
+                  type="number"
+                  name="basePrice"
+                  value={screening.basePrice}
+                  onChange={(e) => setScreening(prev => ({ ...prev, basePrice: e.target.value }))}
+                  className="bg-[#3C3C3C] text-white border-0"
+                  required
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
                 />
               </div>
 

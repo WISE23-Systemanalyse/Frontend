@@ -135,9 +135,9 @@ export default function AdminUsers() {
                           <Image
                             src={user.imageUrl}
                             alt={user.userName || user.email}
-                            className="w-full h-full object-cover"
                             width={48}
                             height={48}
+                            className="w-full h-full object-cover"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-neutral-600 text-white text-lg font-medium">
