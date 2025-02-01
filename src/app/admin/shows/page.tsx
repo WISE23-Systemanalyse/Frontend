@@ -149,6 +149,25 @@ export default function Showings() {
     return acc
   }, {})
 
+  const formatDateTime = (utcDateString: string) => {
+    const date = new Date(utcDateString);
+    
+    return {
+      date: date.toLocaleDateString('de-DE', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC'
+      }),
+      time: date.toLocaleTimeString('de-DE', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        timeZone: 'UTC'
+      })
+    };
+  };
+
   return (
     <div className="min-h-screen bg-[#141414]">
       <Toast 
@@ -209,7 +228,6 @@ export default function Showings() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {hallShowings.map(showing => {
-                        const startTime = new Date(showing.start_time);
 
                         return (
                           <div 
@@ -243,19 +261,14 @@ export default function Showings() {
                                 <div className="flex items-center text-gray-400">
                                   <div className="w-24 flex-shrink-0">Datum:</div>
                                   <div className="text-white">
-                                    {startTime.toLocaleDateString('de-DE', {
-                                      weekday: 'long',
-                                      year: 'numeric',
-                                      month: 'long',
-                                      day: 'numeric'
-                                    })}
+                                    {formatDateTime(showing.start_time).date}
                                   </div>
                                 </div>
                                 
                                 <div className="flex items-center text-gray-400">
                                   <div className="w-24 flex-shrink-0">Zeit:</div>
                                   <div className="text-white">
-                                    {startTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                                    {formatDateTime(showing.start_time).time}
                                   </div>
                                 </div>
                               </div>

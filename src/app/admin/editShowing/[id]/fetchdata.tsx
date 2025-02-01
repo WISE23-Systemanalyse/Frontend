@@ -1,8 +1,16 @@
 interface ShowData {
-    id: number;
+    show_id: number;
     movie_id: number;
     hall_id: number;
     start_time: string;
+}
+
+interface Movie {
+    id: number;
+    title: string;
+    description: string;
+    duration: number;
+    image_url: string;
 }
 
 export const fetchShow = async (id: string): Promise<ShowData> => {
@@ -32,30 +40,97 @@ export const fetchMovies = async () => {
     return data;
 }
 
-export const updateShow = async (id: string, data: ShowData) => {
-    console.log('Sende Update:', data);
-    
-    // Sende die Daten direkt, ohne Date-Konvertierung
-    const response = await fetch(`${process.env.BACKEND_URL}/shows/${id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            id: parseInt(id),
-            movie_id: data.movie_id,
-            hall_id: data.hall_id,
-            start_time: data.start_time // Sende den String direkt
-        })
-    });
+export const checkHallAvailability = async (hallId: number, startTime: string, movieDuration: number, showId: number) => {
+    try {
+        const response = await fetch(`${process.env.BACKEND_URL}/shows/hall/${hallId}`);
+        if (!response.ok) throw new Error('Fehler beim Laden der Vorstellungen');
+        const shows: ShowData[] = await response.json();
+        
+        const newShowStart = new Date(startTime);
+        const newShowEnd = new Date(newShowStart.getTime() + (movieDuration + 60) * 60000);
+        
+        // Stelle sicher, dass showId als number verglichen wird
+        const currentShowId = Number(showId);
+        
+        // Filtere die zu bearbeitende Show aus den Vergleichen aus
+        const otherShows = shows.filter(show => Number(show.show_id) !== currentShowId);
+        
+        // Prüfe Überschneidungen mit allen anderen Shows
+        for (const show of otherShows) {
+            const showStart = new Date(show.start_time);
+            // Hole die Filmdauer für diese Show
+            const movieResponse = await fetch(`${process.env.BACKEND_URL}/movies/${show.movie_id}`);
+            if (!movieResponse.ok) throw new Error('Fehler beim Laden der Filmdaten');
+            const movie: Movie = await movieResponse.json();
+            const showEnd = new Date(showStart.getTime() + (movie.duration + 60) * 60000);
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server Fehler:', errorText);
-        throw new Error('Vorstellung konnte nicht aktualisiert werden');
+            // Prüfe ob sich die Zeiträume überschneiden
+            if (
+                (newShowStart >= showStart && newShowStart < showEnd) || // Neue Show startet während einer anderen
+                (newShowEnd > showStart && newShowEnd <= showEnd) || // Neue Show endet während einer anderen
+                (newShowStart <= showStart && newShowEnd >= showEnd) // Neue Show umschließt eine andere
+            ) {
+                const formattedShowStart = showStart.toLocaleTimeString('de-DE', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'UTC'
+                });
+                const formattedShowEnd = showEnd.toLocaleTimeString('de-DE', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'UTC'
+                });
+                throw new Error(
+                    `Zeitkonflikt mit existierender Vorstellung (${formattedShowStart} - ${formattedShowEnd} Uhr)`
+                );
+            }
+        }
+
+        return true;
+    } catch (error) {
+        throw error;
     }
+};
 
-    return response.json();
+export const updateShow = async (id: string, data: ShowData) => {
+    try {
+        // Hole die Filmdauer des ausgewählten Films
+        const movieResponse = await fetch(`${process.env.BACKEND_URL}/movies/${data.movie_id}`);
+        if (!movieResponse.ok) throw new Error('Film nicht gefunden');
+        const movie: Movie = await movieResponse.json();
+
+        // Prüfe die Verfügbarkeit
+        await checkHallAvailability(
+            data.hall_id,
+            data.start_time,
+            movie.duration,
+            data.show_id
+        );
+
+        // Wenn verfügbar, aktualisiere die Show
+        const response = await fetch(`${process.env.BACKEND_URL}/shows/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id: parseInt(id),
+                movie_id: data.movie_id,
+                hall_id: data.hall_id,
+                start_time: data.start_time
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server Fehler:', errorText);
+            throw new Error('Vorstellung konnte nicht aktualisiert werden');
+        }
+
+        return response.json();
+    } catch (error) {
+        throw error;
+    }
 };
 
 export const deleteShow = async (id: string) => {

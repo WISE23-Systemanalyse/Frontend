@@ -149,6 +149,25 @@ export default function Programm() {
     return Object.values(grouped);
   };
 
+  const formatDateTime = (utcDateString: string) => {
+    const date = new Date(utcDateString);
+    
+    return {
+      date: date.toLocaleDateString('de-DE', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC'
+      }),
+      time: date.toLocaleTimeString('de-DE', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        timeZone: 'UTC'
+      })
+    };
+  };
+
   return (
     <div className="min-h-screen bg-[#141414]">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -227,10 +246,7 @@ export default function Programm() {
                                     
                                     <div className="relative z-10 transform group-hover:scale-105 transition-transform">
                                       <div className="text-lg font-semibold mb-1 text-white group-hover:text-red-400 transition-colors">
-                                        {new Date(showing.start_time).toLocaleTimeString('de-DE', {
-                                          hour: '2-digit',
-                                          minute: '2-digit'
-                                        })}
+                                        {formatDateTime(showing.start_time).time}
                                       </div>
                                       <div className="text-sm text-gray-300 group-hover:text-gray-200 transition-colors">
                                         Saal {showing.hall_name}
