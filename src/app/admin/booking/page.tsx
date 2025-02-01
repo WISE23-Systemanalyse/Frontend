@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react'
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, ChevronLeft, ChevronDown, ChevronRight } from "lucide-react"
+import { Search, ChevronLeft, ChevronDown, ChevronRight, Trash2 } from "lucide-react"
 import { useRouter } from 'next/navigation'
-import { fetchBookingDetails, fetchMovies } from './fetchdata'
+import { fetchBookingDetails, fetchMovies, deleteBooking } from './fetchdata'
 import Image from 'next/image'
+import { Toast } from "@/components/ui/toast"
 
 interface Booking {
   booking_id: number
@@ -23,12 +24,17 @@ interface Booking {
   movie_id: number
   hall_id: number
   start_time: string
+  base_price: number
   row_number: number
   seat_number: number
-  seat_type: string
+  category_id: string
   amount: number
   payment_time: string
   tax: number
+  payment_method: string
+  payment_status: string
+  payment_details: string
+  time_of_payment: string
 }
 
 interface Movie {
@@ -56,6 +62,11 @@ export default function AdminBookings() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [, setMovies] = useState<Movie[]>([])
+  const [toastConfig, setToastConfig] = useState<{
+    message: string;
+    isVisible: boolean;
+    variant?: 'default' | 'success' | 'error' | 'loading';
+  }>({ message: '', isVisible: false });
 
   useEffect(() => {
     const loadData = async () => {
@@ -115,6 +126,41 @@ export default function AdminBookings() {
       booking.user_name.toLowerCase().includes(searchLower) ||
       booking.booking_id.toString() === searchTerm
     )
+  }
+
+  const handleDeleteBooking = async (bookingId: number, userName: string) => {
+    const isConfirmed = window.confirm(
+      `Möchten Sie die Buchung von ${userName} (#${bookingId}) wirklich löschen? \n\nDieser Vorgang kann nicht rückgängig gemacht werden.`
+    )
+
+    if (!isConfirmed) return
+
+    try {
+      await deleteBooking(bookingId)
+      
+      setGroupedBookings(prevBookings => {
+        const newBookings = { ...prevBookings }
+        Object.keys(newBookings).forEach((showId) => {
+          newBookings[parseInt(showId)].bookings = newBookings[parseInt(showId)].bookings.filter(
+            (booking: { booking_id: number }) => booking.booking_id !== bookingId
+          )
+        })
+        return newBookings
+      })
+
+      setToastConfig({
+        message: `Die Buchung #${bookingId} wurde erfolgreich gelöscht.`,
+        isVisible: true,
+        variant: 'success'
+      })
+    } catch (err) {
+      setToastConfig({
+        message: err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten',
+        isVisible: true,
+        variant: 'error'
+      })
+      setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten')
+    }
   }
 
   if (isLoading) {
@@ -189,6 +235,8 @@ export default function AdminBookings() {
                               <Image 
                                 src={show.movie.imageUrl} 
                                 alt={show.movie.title}
+                                width={64}
+                                height={96}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   console.error('Failed to load image:', show.movie.imageUrl)
@@ -225,58 +273,88 @@ export default function AdminBookings() {
 
                     {expandedShows.includes(parseInt(showId)) && (
                       <div className="border-t border-[#2C2C2C]">
-                        {filteredBookings.map((booking: {
-                          booking_id: string;
-                          email: string;
-                          user_name: string;
-                          image_url: string;
-                          amount: number;
-                          tax: number;
-                          row_number: number;
-                          seat_number: number;
-                          seat_type: string;
-                          booking_time: string;
-                        }) => (
+                        {filteredBookings.map((booking: Booking) => (
                           <div
                             key={booking.booking_id}
                             className="p-4 border-b border-[#2C2C2C] last:border-b-0"
                           >
-                            <div className="flex justify-between items-start">
+                            <div className="flex justify-between items-center">
                               <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full overflow-hidden">
-                                  <Image 
-                                    src={booking.image_url} 
-                                    alt={booking.user_name}
-                                    className="w-full h-full object-cover"
-                                  />
+                                <div className="w-12 h-12 rounded-full overflow-hidden bg-neutral-600">
+                                  {booking.image_url ? (
+                                    <Image 
+                                      src={booking.image_url} 
+                                      alt={booking.user_name}
+                                      width={48}
+                                      height={48}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-neutral-600 text-white text-lg font-medium">
+                                      {(booking.first_name || booking.user_name || booking.email || '?').charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
                                 </div>
                                 <div>
                                   <h4 className="text-white font-medium">{booking.user_name}</h4>
                                   <p className="text-sm text-gray-400">{booking.email}</p>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <div className="text-white font-medium">
-                                  {booking.amount.toFixed(2)} €
+                              <div className="flex items-center gap-4">
+                                <div className={`px-3 py-1 rounded-full text-sm ${
+                                  booking.payment_status === 'completed' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'
+                                }`}>
+                                  {booking.payment_status === 'completed' ? 'Bezahlt' : 'Ausstehend'}
                                 </div>
-                                <div className="text-sm text-gray-400">
-                                  inkl. {(booking.tax * 100).toFixed(0)}% MwSt.
-                                </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteBooking(booking.booking_id, booking.user_name)
+                                  }}
+                                  className="text-red-400 hover:text-red-300 transition-colors p-2 
+                                           hover:bg-red-400/10 rounded-full"
+                                  title="Buchung löschen"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
                               </div>
                             </div>
-                            
-                            <div className="grid grid-cols-2 gap-4 text-sm mt-4">
-                              <div>
-                                <span className="text-gray-400">Sitzplatz:</span>
-                                <span className="text-white ml-2">
-                                  Reihe {booking.row_number}, Platz {booking.seat_number} ({booking.seat_type})
-                                </span>
+
+                            <div className="mt-4 grid grid-cols-2 gap-4 text-sm border-t border-[#2C2C2C] pt-4">
+                              <div className="space-y-2">
+                                <div>
+                                  <span className="text-gray-400">Buchungs-ID:</span>
+                                  <span className="text-white ml-2">#{booking.booking_id}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Sitzplatz:</span>
+                                  <span className="text-white ml-2">
+                                    Reihe {booking.row_number}, Platz {booking.seat_number} (Kategorie {booking.category_id})
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Grundpreis:</span>
+                                  <span className="text-white ml-2">{booking.base_price.toFixed(2)} €</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Buchungszeitpunkt:</span>
+                                  <span className="text-white ml-2">{formatDate(booking.booking_time)}</span>
+                                </div>
                               </div>
-                              <div>
-                                <span className="text-gray-400">Buchungszeitpunkt:</span>
-                                <span className="text-white ml-2">
-                                  {formatDate(booking.booking_time)}
-                                </span>
+
+                              <div className="space-y-2">
+                                <div>
+                                  <span className="text-gray-400">Zahlungsmethode:</span>
+                                  <span className="text-white ml-2">{booking.payment_method}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Zahlungszeitpunkt:</span>
+                                  <span className="text-white ml-2">{formatDate(booking.time_of_payment)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Gesamtbetrag:</span>
+                                  <span className="text-white ml-2">{booking.amount.toFixed(2)} € (inkl. {(booking.tax * 100).toFixed(0)}% MwSt.)</span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -296,6 +374,13 @@ export default function AdminBookings() {
           </div>
         </Card>
       </div>
+      
+      <Toast 
+        message={toastConfig.message}
+        isVisible={toastConfig.isVisible}
+        variant={toastConfig.variant}
+        onClose={() => setToastConfig(prev => ({ ...prev, isVisible: false }))}
+      />
     </div>
   )
 }

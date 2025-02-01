@@ -13,6 +13,7 @@ interface Show {
   name: string;
   description: string;
   image_url: string;
+  available_seats?: number;
 }
 
 interface ShowGroups {
@@ -27,6 +28,7 @@ interface GroupedShow {
     id: number;
     start_time: string;
     hall_name: string;
+    available_seats?: number;
   }[];
 }
 
@@ -131,7 +133,8 @@ export default function Programm() {
       acc[show.movie_id].showings.push({
         id: show.id,
         start_time: show.start_time,
-        hall_name: show.name
+        hall_name: show.name,
+        available_seats: show.available_seats
       });
       return acc;
     }, {});
@@ -176,69 +179,79 @@ export default function Programm() {
                   <div className="grid gap-4">
                     {groupedShowings.map((group) => (
                       <div key={group.movie_id} className="bg-[#2C2C2C] rounded-xl overflow-hidden">
-                        <div className="flex items-center">
+                        <div className="flex items-stretch">
                           {/* Linker Container: Filmbild */}
-                          <div className="w-[100px] h-[150px] flex-shrink-0">
-                            <div className="relative w-full h-full">
-                              <Image
-                                src={group.image_url}
-                                alt={group.title}
-                                fill
-                                className="object-cover"
-                                loading="lazy"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.onerror = null;
-                                  target.src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTAwIDc1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTAwIiBoZWlnaHQ9Ijc1MCIgZmlsbD0iIzFjMWMxYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjIwIiBmaWxsPSIjNmI3MjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+S2VpbiBCaWxkIHZlcmbDvGdiYXI8L3RleHQ+PC9zdmc+';
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-[#2C2C2C] via-transparent to-transparent 
-                                            opacity-90 transition-opacity duration-500" />
-                            </div>
+                          <div className="w-[140px] relative">
+                            <Image
+                              src={group.image_url}
+                              alt={group.title}
+                              fill
+                              className="object-cover"
+                              loading="lazy"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTAwIDc1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTAwIiBoZWlnaHQ9Ijc1MCIgZmlsbD0iIzFjMWMxYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjIwIiBmaWxsPSIjNmI3MjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+S2VpbiBCaWxkIHZlcmbDvGdiYXI8L3RleHQ+PC9zdmc+';
+                              }}
+                            />
                           </div>
 
-                          {/* Mittlerer Container: Titel und scrollbare Vorstellungen */}
+                          {/* Mittlerer Container: Titel und Info-Kachel */}
                           <div className="flex-1 p-6 flex flex-col min-w-0">
-                            <div className="text-lg font-bold text-white mb-4">
-                              {group.title}
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="text-xl font-bold text-white">
+                                {group.title}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-gray-400">
+                                <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                                        d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                                </svg>
+                                <span>Vorstellungen</span>
+                              </div>
                             </div>
-                            <div className="relative">
-                              <div className="overflow-x-auto scrollbar-hide">
-                                <div className="flex gap-4 pb-4 scroll-smooth" id={`scroll-${group.movie_id}`}>
-                                  {group.showings.map((showing) => (
-                                    <div
-                                      key={showing.id}
-                                      className="flex-none inline-flex items-center gap-3 bg-[#3C3C3C] 
-                                               px-4 py-2 rounded-full"
-                                    >
-                                      <span className="text-base font-bold text-gray-300 whitespace-nowrap">
+                            
+                            <div className="overflow-x-auto scrollbar-hide">
+                              <div className="flex gap-4 pb-4 scroll-smooth" id={`scroll-${group.movie_id}`}>
+                                {group.showings.map((showing) => (
+                                  <Link
+                                    key={showing.id}
+                                    href={`/movie/${group.movie_id}?showId=${showing.id}&date=${new Date(showing.start_time).getDate()}&month=${new Date(showing.start_time).toLocaleString("de-DE", { month: "long" })}&showSeats=true`}
+                                    className="group flex flex-col items-center p-4 rounded-lg transition-all 
+                                             bg-neutral-800/50 hover:bg-neutral-700/50 
+                                             min-w-[120px] border border-red-500/10
+                                             hover:border-red-500/30 relative overflow-hidden
+                                             hover:z-10 cursor-pointer"
+                                  >
+                                    <div className="absolute inset-0 bg-gradient-to-t from-red-500/10 to-transparent opacity-80" />
+                                    
+                                    <div className="relative z-10 transform group-hover:scale-105 transition-transform">
+                                      <div className="text-lg font-semibold mb-1 text-white group-hover:text-red-400 transition-colors">
                                         {new Date(showing.start_time).toLocaleTimeString('de-DE', {
                                           hour: '2-digit',
                                           minute: '2-digit'
                                         })}
-                                      </span>
-                                      <span className="text-sm text-gray-300 whitespace-nowrap">
+                                      </div>
+                                      <div className="text-sm text-gray-300 group-hover:text-gray-200 transition-colors">
                                         Saal {showing.hall_name}
-                                      </span>
+                                      </div>
+                                      {showing.available_seats !== undefined && (
+                                        <div className="text-xs mt-2 text-red-400/50 group-hover:text-red-400/70 transition-colors">
+                                          {showing.available_seats} freie Plätze
+                                        </div>
+                                      )}
+                                      
+                                      <div className="mt-2 text-xs text-red-400/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                        <span>Tickets buchen</span>
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                      </div>
                                     </div>
-                                  ))}
-                                </div>
+                                  </Link>
+                                ))}
                               </div>
                             </div>
-                          </div>
-
-                          {/* Rechter Container: Tickets Button */}
-                          <div className="w-[200px] flex-shrink-0 px-6 py-4">
-                            {group.showings.length > 0 && (
-                              <Link
-                                href={`/movie/${group.movie_id}?showId=${group.showings[0].id}&date=${new Date(group.showings[0].start_time).getDate()}&month=${new Date(group.showings[0].start_time).toLocaleString("de-DE", { month: "long" })}`}
-                                className="bg-red-600 text-white px-6 py-3 rounded-lg 
-                                         hover:bg-red-700 transition-colors whitespace-nowrap 
-                                         inline-block w-full text-center"
-                              >
-                                Tickets buchen
-                              </Link>
-                            )}
                           </div>
                         </div>
                       </div>

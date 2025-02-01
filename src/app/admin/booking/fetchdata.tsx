@@ -24,3 +24,15 @@ export const fetchBookingDetails = async () => {
     const data = await response.json()
     return data
 }
+
+export const deleteBooking = async (bookingId: number) => {
+  const response = await fetch(`${process.env.BACKEND_URL}/bookings/${bookingId}`, {
+    method: 'DELETE',
+  })
+  
+  if (!response.ok) {
+    throw new Error('Fehler beim Löschen der Buchung')
+  }
+  
+  return true
+}
