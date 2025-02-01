@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Search, UserCog, Trash2 } from "lucide-react"
 import { fetchUsers, deleteUser } from './fetchdata'
 import Image from 'next/image'
+import { Modal } from "@/components/ui/modal"
 
 interface User {
   id: number
@@ -73,6 +74,83 @@ export default function AdminUsers() {
       minute: '2-digit'
     })
   }
+
+  const UserDetailsModal = ({ user }: { user: User }) => {
+    return (
+      <div className="p-6">
+        <div className="flex items-center gap-6 mb-8">
+          <div className="w-24 h-24 rounded-full overflow-hidden bg-neutral-600">
+            {user.imageUrl ? (
+              <Image
+                src={user.imageUrl}
+                alt={user.userName || user.email}
+                width={96}
+                height={96}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-neutral-600 text-white text-3xl font-medium">
+                {(user.userName || user.email || '?').charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-1">
+              {user.userName || 'Kein Benutzername'}
+            </h2>
+            <p className="text-gray-400">{user.email}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <div>
+            <h3 className="text-sm font-medium text-gray-400 mb-1">Persönliche Informationen</h3>
+            <div className="bg-neutral-700/50 rounded-lg p-4 space-y-1 h-[180px]">
+              <div className="flex flex-col -space-y-1">
+                <span className="text-gray-400">Vorname:</span>
+                <span className="text-white ml-4">{user.firstName || '-'}</span>
+              </div>
+              <div className="flex flex-col -space-y-1">
+                <span className="text-gray-400">Nachname:</span>
+                <span className="text-white ml-4">{user.lastName || '-'}</span>
+              </div>
+              <div className="flex flex-col -space-y-1">
+                <span className="text-gray-400">Rolle:</span>
+                <span className="text-white ml-4">{user.isAdmin ? 'Administrator' : 'Benutzer'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-400 mb-1">Konto-Details</h3>
+            <div className="bg-neutral-700/50 rounded-lg p-4 space-y-1 h-[180px]">
+              <div className="flex flex-col -space-y-1">
+                <span className="text-gray-400">Benutzer-ID:</span>
+                <span className="text-white ml-4">{user.id}</span>
+              </div>
+              <div className="flex flex-col -space-y-1">
+                <span className="text-gray-400">Erstellt am:</span>
+                <span className="text-white ml-4">{formatDate(user.createdAt)}</span>
+              </div>
+              <div className="flex flex-col -space-y-1">
+                <span className="text-gray-400">Zuletzt aktualisiert:</span>
+                <span className="text-white ml-4">{formatDate(user.updatedAt)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => handleDeleteUser(user.id)}
+          className="w-full bg-red-500/10 text-red-500 hover:bg-red-500/20 
+                   transition-colors rounded-lg px-4 py-2 flex items-center justify-center gap-2"
+        >
+          <Trash2 className="w-4 h-4" />
+          Benutzer löschen
+        </button>
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -171,30 +249,6 @@ export default function AdminUsers() {
                       </button>
                     </div>
                   </div>
-
-                  {/* Erweiterte Benutzerinformationen */}
-                  {selectedUser?.id === user.id && (
-                    <div className="mt-2 p-4 bg-neutral-800 rounded-lg border border-neutral-700">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-400">Vorname:</span>
-                          <span className="text-white ml-2">{user.firstName || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Nachname:</span>
-                          <span className="text-white ml-2">{user.lastName || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Erstellt am:</span>
-                          <span className="text-white ml-2">{formatDate(user.createdAt)}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Zuletzt aktualisiert:</span>
-                          <span className="text-white ml-2">{formatDate(user.updatedAt)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               ))}
 
@@ -207,6 +261,15 @@ export default function AdminUsers() {
           </div>
         </Card>
       </div>
+
+      {selectedUser && (
+        <Modal
+          isOpen={!!selectedUser}
+          onClose={() => setSelectedUser(null)}
+        >
+          <UserDetailsModal user={selectedUser} />
+        </Modal>
+      )}
     </div>
   )
 }

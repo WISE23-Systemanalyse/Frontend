@@ -30,6 +30,7 @@ export default function MovieDetail() {
   );
   const [selectedShowId, setSelectedShowId] = useState<number | undefined>((showId)? parseInt(showId, 10) : undefined);
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
+  const [showSeatSelection, setShowSeatSelection] = useState(false);
 
   // Optimiere Movie und Shows Fetching
   useEffect(() => {
@@ -106,6 +107,16 @@ export default function MovieDetail() {
   React.useEffect(() => {
     setSelectedShowId(undefined);
   }, [selectedDate, selectedMonth]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const showId = params.get('showId');
+    
+    if (params.get('showSeats') === 'true' && showId) {
+      setSelectedShowId(parseInt(showId, 10));  // String zu Number konvertieren
+      setShowSeatSelection(true);
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -216,6 +227,13 @@ export default function MovieDetail() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Sitzplatzauswahl Modal/Komponente */}
+      {showSeatSelection && selectedShowId && (
+        <div className="...">
+          {/* Sitzplatzauswahl Inhalt */}
+        </div>
+      )}
     </div>
   );
 }
