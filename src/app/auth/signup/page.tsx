@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import VerifyEmailForm from './VerifyEmailForm';
+import { signUp } from './actions';
 
 export default function SignUp() {
   const [error, setError] = useState('');
@@ -13,29 +14,15 @@ export default function SignUp() {
     const formData = new FormData(e.currentTarget);
     
     try {
-      const res = await fetch(`${process.env.BACKEND_URL}/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.get('email'),
-          userName: formData.get('userName'),
-          password: formData.get('password'),
-          firstName: formData.get('firstName'),
-          lastName: formData.get('lastName')
-        }),
-      });
-
-      if (res.ok) {
-        setUserEmail(formData.get('email') as string);
+      const result = await signUp(formData);
+      if (result.success) {
+        setUserEmail(result.email);
         setShowVerification(true);
       } else {
-        const data = await res.json();
-        setError(data.error || 'Registration failed');
+        setError(result.error);
       }
     } catch (error) {
-      setError('An error occurred during registration' + error);
+      setError('An error occurred during registration');
     }
   };
 

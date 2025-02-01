@@ -1,5 +1,6 @@
 "use server"
 import { z } from "zod"
+import { hash} from "bycript"
 
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -10,6 +11,7 @@ const signUpSchema = z.object({
 })
 
 export async function signUp(formData: FormData) {
+  const hasPass = await hash()
   const validatedFields = signUpSchema.safeParse({
     email: formData.get("email"),
     userName: formData.get("userName"),
