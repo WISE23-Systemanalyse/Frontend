@@ -105,36 +105,36 @@ export default function AdminUsers() {
         <div className="grid grid-cols-2 gap-6 mb-6">
           <div>
             <h3 className="text-sm font-medium text-gray-400 mb-1">Persönliche Informationen</h3>
-            <div className="bg-neutral-700/50 rounded-lg p-4 space-y-1 h-[180px]">
-              <div className="flex flex-col -space-y-1">
-                <span className="text-gray-400">Vorname:</span>
-                <span className="text-white ml-4">{user.firstName || '-'}</span>
+            <div className="bg-neutral-700/50 rounded-lg p-4 space-y-2 h-[220px]">
+              <div className="flex flex-col">
+                <span className="text-gray-400 mb-0.5">Vorname:</span>
+                <span className="text-white break-all">{user.firstName || '-'}</span>
               </div>
-              <div className="flex flex-col -space-y-1">
-                <span className="text-gray-400">Nachname:</span>
-                <span className="text-white ml-4">{user.lastName || '-'}</span>
+              <div className="flex flex-col">
+                <span className="text-gray-400 mb-0.5">Nachname:</span>
+                <span className="text-white break-all">{user.lastName || '-'}</span>
               </div>
-              <div className="flex flex-col -space-y-1">
-                <span className="text-gray-400">Rolle:</span>
-                <span className="text-white ml-4">{user.isAdmin ? 'Administrator' : 'Benutzer'}</span>
+              <div className="flex flex-col">
+                <span className="text-gray-400 mb-0.5">Rolle:</span>
+                <span className="text-white">{user.isAdmin ? 'Administrator' : 'Benutzer'}</span>
               </div>
             </div>
           </div>
 
           <div>
             <h3 className="text-sm font-medium text-gray-400 mb-1">Konto-Details</h3>
-            <div className="bg-neutral-700/50 rounded-lg p-4 space-y-1 h-[180px]">
-              <div className="flex flex-col -space-y-1">
-                <span className="text-gray-400">Benutzer-ID:</span>
-                <span className="text-white ml-4">{user.id}</span>
+            <div className="bg-neutral-700/50 rounded-lg p-4 space-y-2 h-[220px]">
+              <div className="flex flex-col">
+                <span className="text-gray-400 mb-0.5">Benutzer-ID:</span>
+                <span className="text-white break-all">{user.id}</span>
               </div>
-              <div className="flex flex-col -space-y-1">
-                <span className="text-gray-400">Erstellt am:</span>
-                <span className="text-white ml-4">{formatDate(user.createdAt)}</span>
+              <div className="flex flex-col">
+                <span className="text-gray-400 mb-0.5">Erstellt am:</span>
+                <span className="text-white">{formatDate(user.createdAt)}</span>
               </div>
-              <div className="flex flex-col -space-y-1">
-                <span className="text-gray-400">Zuletzt aktualisiert:</span>
-                <span className="text-white ml-4">{formatDate(user.updatedAt)}</span>
+              <div className="flex flex-col">
+                <span className="text-gray-400 mb-0.5">Zuletzt aktualisiert:</span>
+                <span className="text-white">{formatDate(user.updatedAt)}</span>
               </div>
             </div>
           </div>

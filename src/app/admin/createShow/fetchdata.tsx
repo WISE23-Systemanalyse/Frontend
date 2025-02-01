@@ -35,36 +35,42 @@ export const fetchMovies = async () => {
 // Funktion zum Prüfen der Verfügbarkeit
 export const checkHallAvailability = async (hallId: number, startTime: string, movieDuration: number) => {
     try {
-        // Hole alle Shows für diesen Saal
         const response = await fetch(`${process.env.BACKEND_URL}/shows/hall/${hallId}`);
         if (!response.ok) throw new Error('Fehler beim Laden der Vorstellungen');
         const shows: Show[] = await response.json();
         
-        console.log("Aufrufparameter: Saal ID: " + hallId + ", Startzeit: " + startTime + ", Filmdauer: " + movieDuration);
-        console.log(shows);
-
         const newShowStart = new Date(startTime);
-        console.log("newShowStart: " + newShowStart);
-        const newShowEnd = new Date(newShowStart.getTime() + (movieDuration + 60) * 60000); // Filmdauer + 1 Stunde in Millisekunden
-        console.log("newShowEnd: " + newShowEnd);
-        const fourHoursBefore = new Date(newShowStart.getTime() - 4 * 60 * 60000);
-        console.log("fourHoursBefore: " + fourHoursBefore);
-
-        // Prüfe Überschneidungen
-        const conflictingShow = shows.find(show => {
+        const newShowEnd = new Date(newShowStart.getTime() + (movieDuration + 60) * 60000);
+        
+        // Prüfe Überschneidungen mit allen Shows
+        for (const show of shows) {
             const showStart = new Date(show.start_time);
-            const showEnd = new Date(showStart.getTime() + ((show.movie_duration || 0) + 60) * 60000);
+            // Hole die Filmdauer für diese Show
+            const movieResponse = await fetch(`${process.env.BACKEND_URL}/movies/${show.movie_id}`);
+            if (!movieResponse.ok) throw new Error('Fehler beim Laden der Filmdaten');
+            const movie: Movie = await movieResponse.json();
+            const showEnd = new Date(showStart.getTime() + (movie.duration + 60) * 60000);
 
-            // Prüfe ob die neue Show mit einer existierenden Show überlappt
-            return (
-                (newShowStart >= showStart && newShowStart <= showEnd) || // Neue Show startet während einer anderen
-                (newShowEnd >= showStart && newShowEnd <= showEnd) || // Neue Show endet während einer anderen
+            // Prüfe ob sich die Zeiträume überschneiden
+            if (
+                (newShowStart >= showStart && newShowStart < showEnd) || // Neue Show startet während einer anderen
+                (newShowEnd > showStart && newShowEnd <= showEnd) || // Neue Show endet während einer anderen
                 (newShowStart <= showStart && newShowEnd >= showEnd) // Neue Show umschließt eine andere
-            ) && showStart >= fourHoursBefore; // Nur Shows in den nächsten 4 Stunden berücksichtigen
-        });
-
-        if (conflictingShow) {
-            throw new Error('Der Saal ist zu dieser Zeit bereits belegt');
+            ) {
+                const formattedShowStart = showStart.toLocaleTimeString('de-DE', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'UTC'
+                });
+                const formattedShowEnd = showEnd.toLocaleTimeString('de-DE', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'UTC'
+                });
+                throw new Error(
+                    `Zeitkonflikt mit existierender Vorstellung (${formattedShowStart} - ${formattedShowEnd} Uhr)`
+                );
+            }
         }
 
         return true;

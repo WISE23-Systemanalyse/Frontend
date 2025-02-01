@@ -27,7 +27,7 @@ interface Hall {
 }
 
 interface Show {
-  id: number
+  show_id: number
   movie_id: number
   hall_id: number
   start_time: string
@@ -61,93 +61,55 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
   });
 
   useEffect(() => {
-    const loadShow = async () => {
+    const loadData = async () => {
       try {
-        console.log('Lade Vorstellung...')
-        console.log('ID:', params.id)
-        const showData = await fetchShow(params.id)
-        console.log('Geladene Vorstellung:', showData)
-        
-        if (!showData) {
-          setError('Keine Daten für diese Vorstellung gefunden')
-          return
-        }
-
-        setShow(showData)
-
-        // Setze die initialen Werte nur wenn die benötigten Daten existieren
-        if (showData.start_time && showData.hall_id !== undefined) {
-          const startTime = new Date(showData.start_time)
-          
-          // Formatiere das Datum für das Input-Feld (YYYY-MM-DD)
-          const year = startTime.getFullYear()
-          const month = String(startTime.getMonth() + 1).padStart(2, '0')
-          const day = String(startTime.getDate()).padStart(2, '0')
-          const formattedDate = `${year}-${month}-${day}`
-          
-          // Formatiere die Zeit für das Input-Feld (HH:mm)
-          const hours = String(startTime.getHours()).padStart(2, '0')
-          const minutes = String(startTime.getMinutes()).padStart(2, '0')
-          const formattedTime = `${hours}:${minutes}`
-
-          setDate(formattedDate)
-          setTime(formattedTime)
-          setSelectedHall(showData.hall_id.toString())
-          // Setze einen initialen Preis von 1500 (15,00 €)
-          setPrice('1500')
-        }
-      } catch (err) {
-        setError('Vorstellung konnte nicht geladen werden')
-        console.error(err)
-      }
-    }
-
-    const loadMoviesAndHalls = async () => {
-      try {
-        const [moviesData, hallsData] = await Promise.all([
+        const [showData, moviesData, hallsData] = await Promise.all([
+          fetchShow(params.id),
           fetchMovies(),
           fetchHalls()
-        ])
-        setMovies(moviesData)
-        setHalls(hallsData)
+        ]);
 
-        console.log('Geladene Filme:', moviesData)
-        console.log('Geladene Halls:', hallsData)
+        setShow(showData);
+        setMovies(moviesData);
+        setHalls(hallsData);
 
-        // Wenn show und movies geladen sind, setze den ausgewählten Film und Saal
-        if (show) {
-          // Film setzen
-          if (show.movie_id) {
-            const currentMovie = moviesData.find((movie: { id: number }) => movie.id === show.movie_id)
-            if (currentMovie) {
-              setSelectedMovie({
-                value: currentMovie.id.toString(),
-                label: currentMovie.title
-              })
-            }
+        if (showData) {
+          // Setze Film
+          const currentMovie = moviesData.find((movie: { id: number }) => movie.id === showData.movie_id);
+          if (currentMovie) {
+            setSelectedMovie({
+              value: currentMovie.id.toString(),
+              label: currentMovie.title
+            });
           }
 
-          // Saal setzen
-          if (show.hall_id) {
-            const currentHall = hallsData.find((hall: { id: number }) => hall.id === show.hall_id)
-            if (currentHall) {
-              setSelectedHall(currentHall.id.toString())
-            }
-          }
+          // Setze Saal
+          setSelectedHall(showData.hall_id.toString());
+
+          // Setze Datum und Zeit
+          const startTime = new Date(showData.start_time);
+          
+          const year = startTime.getUTCFullYear();
+          const month = String(startTime.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(startTime.getUTCDate()).padStart(2, '0');
+          setDate(`${year}-${month}-${day}`);
+          
+          const hours = String(startTime.getUTCHours()).padStart(2, '0');
+          const minutes = String(startTime.getUTCMinutes()).padStart(2, '0');
+          setTime(`${hours}:${minutes}`);
         }
       } catch (err) {
-        setError('Daten konnten nicht geladen werden')
-        console.error(err)
+        setError('Fehler beim Laden der Daten');
+        console.error(err);
       }
-    }
+    };
 
-    // Lade die Daten
-    Promise.all([loadShow(), loadMoviesAndHalls()])
-      .catch(err => {
-        console.error('Fehler beim Laden der Daten:', err)
-        setError('Fehler beim Laden der Daten')
-      })
-  }, [params.id, show?.movie_id, show?.hall_id, show])
+    loadData();
+  }, [params.id]);
+
+  const handleMovieChange = (selectedOption: MovieOption | null) => {
+    setSelectedMovie(selectedOption);
+  };
 
   const handleSubmit = async () => {
     if (!selectedMovie || !selectedHall || !date || !time) {
@@ -173,13 +135,12 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
       const startTime = new Date(Date.UTC(year, month - 1, day, hours, minutes));
 
       const showData = {
-        id: parseInt(params.id),
+        show_id: parseInt(params.id),
         movie_id: parseInt(selectedMovie.value),
         hall_id: parseInt(selectedHall),
         start_time: startTime.toISOString()
       };
 
-      console.log('Sende Update:', showData);
       await updateShow(params.id, showData);
 
       setToast({
@@ -201,20 +162,6 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleMovieChange = (selectedOption: { value: string; label: string } | null) => {
-    if (selectedOption) {
-      const movie = movies.find(m => m.id === parseInt(selectedOption.value));
-      if (movie) {
-        setSelectedMovie({
-          value: movie.id.toString(),
-          label: movie.title
-        });
-      }
-    } else {
-      setSelectedMovie(null);
     }
   };
 

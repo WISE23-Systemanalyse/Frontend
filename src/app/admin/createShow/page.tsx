@@ -161,12 +161,16 @@ export default function CreateScreening() {
     });
 
     try {
-      const dateTime = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+      const [year, month, day] = screening.date.split('-').map(Number);
+      const [hours, minutes] = screening.time.split(':').map(Number);
       
+      // Erstelle direkt ein UTC Datum
+      const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+
       const showData = {
         movie_id: parseInt(screening.movieId),
         hall_id: parseInt(screening.theaterId),
-        start_time: dateTime.toISOString(),
+        start_time: utcDate.toISOString(),
         base_price: parseFloat(screening.basePrice)
       };
 
