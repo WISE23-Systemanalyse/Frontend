@@ -11,7 +11,6 @@ export default function SignUp() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
     
     try {
       const res = await fetch(`${process.env.BACKEND_URL}/signup`, {
@@ -20,21 +19,23 @@ export default function SignUp() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: email,
+          email: formData.get('email'),
+          userName: formData.get('userName'),
           password: formData.get('password'),
-          userName: formData.get('userName')
+          firstName: formData.get('firstName'),
+          lastName: formData.get('lastName')
         }),
       });
 
       if (res.ok) {
-        setUserEmail(email);
+        setUserEmail(formData.get('email') as string);
         setShowVerification(true);
       } else {
         const data = await res.json();
         setError(data.error || 'Registration failed');
       }
     } catch (error) {
-      setError('An error occurred during registration' + error);
+      setError('An error occurred during registration');
     }
   };
 
@@ -77,6 +78,30 @@ export default function SignUp() {
             <input
               id="userName"
               name="userName"
+              type="text"
+              required
+              className="mt-1 block w-full rounded-md border p-2"
+            />
+          </div>
+          <div>
+            <label htmlFor="firstName" className="block text-sm font-medium">
+              First Name
+            </label>
+            <input
+              id="firstName"
+              name="firstName"
+              type="text"
+              required
+              className="mt-1 block w-full rounded-md border p-2"
+            />
+          </div>
+          <div>
+            <label htmlFor="lastName" className="block text-sm font-medium">
+              Last Name
+            </label>
+            <input
+              id="lastName"
+              name="lastName"
               type="text"
               required
               className="mt-1 block w-full rounded-md border p-2"

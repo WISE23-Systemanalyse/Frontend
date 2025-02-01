@@ -15,7 +15,7 @@ export async function signUp(formData: FormData) {
     userName: formData.get("userName"),
     password: formData.get("password"),
     firstName: formData.get("firstName"),
-    lastName: formData.get("lastName"),
+    lastName: formData.get("lastName")
   })
 
   if (!validatedFields.success) {
@@ -36,7 +36,7 @@ export async function signUp(formData: FormData) {
         userName,
         password,
         firstName,
-        lastName,
+        lastName
       }),
     })
 
