@@ -6,7 +6,6 @@ import SeatSelection from '@/components/booking/SeatSelection';
 import { useSession } from 'next-auth/react';
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { Category } from '@/types/categories';
-import {PayPalButtonsOn } from '@paypal/react-paypal-js';
 interface SeatWithCategory {
   id: number;
   row_number: number;
@@ -164,7 +163,7 @@ function CheckoutContent() {
       console.error('Full error:', error);
       throw error;
     }
-  }, [seats, seatDetails, showDetails, showId]);
+  }, [seats, seatDetails, showDetails, showId, user?.id]);
 
   const calculateTotal = useCallback(() => {
     if (!showDetails || !seatDetails.length) return 0;
@@ -225,16 +224,6 @@ function CheckoutContent() {
     status: string;
   }
 
-  interface PayPalActions {
-    order: {
-      capture: () => Promise<PayPalDetails>;
-    }
-  }
-
-  interface PayPalData {
-    orderID: string;
-  }
-
   interface Payment {
     amount: number;
     tax: number;
@@ -247,6 +236,7 @@ function CheckoutContent() {
     id: string;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePayPalApprove = useCallback(async (data: any, actions: any) => {
     try {
       setIsLoading(true);
