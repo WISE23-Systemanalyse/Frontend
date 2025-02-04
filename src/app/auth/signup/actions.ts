@@ -3,9 +3,9 @@ import { z } from "zod"
 import { hash} from "bcrypt"
 
 const signUpSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  userName: z.string().min(3, "Username must be at least 3 characters long"),
-  password: z.string().min(8, "Password must be at least 8 characters long"),
+  email: z.string().email("Ungültige E-Mail-Adresse"),
+  userName: z.string().min(3, "Benutzername muss mindestens 3 Zeichen lang sein"),
+  password: z.string().min(8, "Passwort muss mindestens 8 Zeichen lang sein"),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
 })
@@ -20,8 +20,10 @@ export async function signUp(formData: FormData) {
   })
 
   if (!validatedFields.success) {
-    const errors = validatedFields.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join(", ")
-    return { success: false, error: `Invalid input: ${errors}` }
+    const errors = validatedFields.error.issues
+      .map((issue) => `${issue.message}`)
+      .join(", ")
+    return { success: false, error: errors }
   }
 
   const hasPass = await hash(validatedFields.data.password, 10)
