@@ -1,18 +1,12 @@
 "use client";
 import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
-import Script from 'next/script';
 import PriceOverview from '@/components/booking/PriceOverview';
 import SeatSelection from '@/components/booking/SeatSelection';
 import { useSession } from 'next-auth/react';
-interface Category {
-  id: number;
-  name: string;
-  price: number;
-  surcharge: number;
-  [key: string]: string | number; // für zusätzliche dynamische Eigenschaften
-}
-
+import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { Category } from '@/types/categories';
+import {PayPalButtonsOn } from '@paypal/react-paypal-js';
 interface SeatWithCategory {
   id: number;
   row_number: number;
@@ -28,48 +22,9 @@ interface ShowDetails {
   datetime: string;
   movie_id: number;
   hall_id: number;
+
 }
 
-// PayPal Typen hinzufügen
-interface PayPalActions {
-  order: {
-    create: (data: PayPalOrderConfig) => Promise<string>;
-    capture: () => Promise<PayPalCaptureResponse>;
-  };
-}
-
-interface PayPalOrderConfig {
-  intent: string;
-  purchase_units: {
-    amount: {
-      currency_code: string;
-      value: string;
-      breakdown: {
-        item_total: {
-          currency_code: string;
-          value: string;
-        };
-        tax_total: {
-          currency_code: string;
-          value: string;
-        };
-      };
-    };
-    items: {
-      name: string;
-      quantity: string;
-      unit_amount: {
-        currency_code: string;
-        value: string;
-      };
-    }[];
-  }[];
-}
-
-interface PayPalCaptureResponse {
-  payer: Record<string, unknown>;
-  status: string;
-}
 
 export default function CheckoutPage() {
   return (
@@ -94,10 +49,7 @@ function CheckoutContent() {
   
   const showId = Number(searchParams.get('showId'));
   const [timeLeft, setTimeLeft] = useState(600);
-  const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
-  const merchantId = process.env.NEXT_PUBLIC_PAYPAL_MERCHANT_ID;
   const [isLoading, setIsLoading] = useState(false);
-  const [paypalInitialized, setPaypalInitialized] = useState(false);
   const [seatDetails, setSeatDetails] = useState<SeatWithCategory[]>([]);
   const [showDetails, setShowDetails] = useState<ShowDetails | null>(null);
 
@@ -222,128 +174,124 @@ function CheckoutContent() {
     }, 0);
   }, [showDetails, seatDetails]);
 
-  useEffect(() => {
-    const loadPayPalScript = async () => {
-      // Warten bis alle Daten geladen sind
-      if (!showDetails || !seatDetails.length || seatDetails.some(seat => !seat.category)) {
-        console.log('Warte auf vollständige Daten...', { showDetails, seatDetails });
-        return;
+  const paypalOptions = {
+    "clientId": process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!,
+    currency: "EUR",
+    intent: "capture",
+    "merchant-id": process.env.NEXT_PUBLIC_PAYPAL_MERCHANT_ID
+  };
+
+  const createPayPalOrder = useCallback(async () => {
+    if (!showDetails || !seatDetails.length) return;
+
+    const items = seatDetails.map(seat => ({
+      name: `Sitz R${seat.row_number} P${seat.seat_number} (${seat.category.category_name || 'Standard'})`,
+      quantity: "1",
+      unit_amount: {
+        currency_code: "EUR",
+        value: (showDetails.base_price + seat.category.surcharge).toFixed(2)
       }
-      if (paypalInitialized) return;
+    }));
 
-      try {
-        setPaypalInitialized(true);
-        
-        await window.paypal?.Buttons({
-          createOrder: (data: unknown, actions: PayPalActions) => {
-            const items = seatDetails.map(seat => ({
-              name: `Sitz R${seat.row_number} P${seat.seat_number} (${seat.category.category_name || 'Standard'})`,
-              quantity: "1",
-              unit_amount: {
-                currency_code: "EUR",
-                value: (showDetails.base_price + seat.category.surcharge).toFixed(2)
-              }
-            }));
+    const totalAmount = items.reduce((sum, item) => 
+      sum + Number(item.unit_amount.value), 0
+    );
+    const taxAmount = totalAmount * TAX_RATE;
+    const finalAmount = totalAmount + taxAmount;
 
-            const totalAmount = items.reduce((sum, item) => 
-              sum + Number(item.unit_amount.value), 0
-            );
-            const taxAmount = totalAmount * TAX_RATE;
-            const finalAmount = totalAmount + taxAmount;
-
-            return actions.order.create({
-              intent: "CAPTURE",
-              purchase_units: [{
-                amount: {
-                  currency_code: "EUR",
-                  value: finalAmount.toFixed(2),
-                  breakdown: {
-                    item_total: {
-                      currency_code: "EUR",
-                      value: totalAmount.toFixed(2)
-                    },
-                    tax_total: {
-                      currency_code: "EUR",
-                      value: taxAmount.toFixed(2)
-                    }
-                  }
-                },
-                items: items
-              }]
-            });
-          },
-          onApprove: async (data: { orderID: string }, actions: PayPalActions) => {
-            try {
-              setIsLoading(true);
-              const paypalDetails = await actions.order.capture();
-              console.log('PayPal payment captured:', paypalDetails);
-
-              // 1. Create payment
-              const totalAmount = calculateTotal();
-              const payment = {
-                amount: totalAmount,
-                tax: totalAmount * TAX_RATE,
-                payment_method: 'PAYPAL',
-                payment_status: 'COMPLETED',
-                payment_details: JSON.stringify({
-                  paypal_order_id: data.orderID,
-                  payer: paypalDetails.payer,
-                  status: paypalDetails.status
-                })
-              };
-
-              console.log('Creating payment with data:', payment);
-
-              const paymentResponse = await fetch(
-                `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/payments`, 
-                {
-                  method: 'POST',
-                  headers: { 
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify(payment)
-                }
-              );
-
-              if (!paymentResponse.ok) {
-                const errorText = await paymentResponse.text();
-                console.error('Payment error response:', errorText);
-                throw new Error(`Payment creation failed: ${errorText}`);
-              }
-
-              const createdPayment = await paymentResponse.json();
-              console.log('Payment created:', createdPayment);
-
-              // 2. Create bookings
-              await createBookings(createdPayment.id);
-
-              router.push(`/booking/confirmation/${createdPayment.id}`);
-            } catch (error) {
-              console.error('Full error:', error);
-              alert('Ein Fehler ist aufgetreten. Bitte kontaktieren Sie den Support.');
-            } finally {
-              setIsLoading(false);
+    return {
+      purchase_units: [{
+        amount: {
+          currency_code: "EUR",
+          value: finalAmount.toFixed(2),
+          breakdown: {
+            item_total: {
+              currency_code: "EUR",
+              value: totalAmount.toFixed(2)
+            },
+            tax_total: {
+              currency_code: "EUR",
+              value: taxAmount.toFixed(2)
             }
           }
-        }).render('#paypal-button-container');
-      } catch (error) {
-        console.error('PayPal Initialisierungsfehler:', error);
-        setPaypalInitialized(false);
-      }
+        },
+        items: items
+      }]
     };
+  }, [showDetails, seatDetails]);
 
-    loadPayPalScript();
-  }, [showDetails, seatDetails, paypalInitialized, calculateTotal, createBookings, router]);
+  interface PayPalDetails {
+    payer: unknown;
+    status: string;
+  }
+
+  interface PayPalActions {
+    order: {
+      capture: () => Promise<PayPalDetails>;
+    }
+  }
+
+  interface PayPalData {
+    orderID: string;
+  }
+
+  interface Payment {
+    amount: number;
+    tax: number;
+    payment_method: string;
+    payment_status: string;
+    payment_details: string;
+  }
+
+  interface PaymentResponse {
+    id: string;
+  }
+
+  const handlePayPalApprove = useCallback(async (data: any, actions: any) => {
+    try {
+      setIsLoading(true);
+      const paypalDetails: PayPalDetails = await actions.order.capture();
+      
+      // 1. Create payment
+      const totalAmount: number = calculateTotal();
+      const payment: Payment = {
+        amount: totalAmount,
+        tax: totalAmount * TAX_RATE,
+        payment_method: 'PAYPAL',
+        payment_status: 'COMPLETED',
+        payment_details: JSON.stringify({
+          paypal_order_id: data.orderID,
+          payer: paypalDetails.payer,
+          status: paypalDetails.status
+        })
+      };
+
+      const paymentResponse = await fetch(
+        `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/payments`, 
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payment)
+        }
+      );
+
+      if (!paymentResponse.ok) {
+        throw new Error(await paymentResponse.text());
+      }
+
+      const createdPayment: PaymentResponse = await paymentResponse.json();
+      await createBookings(createdPayment.id);
+      router.push(`/booking/confirmation/${createdPayment.id}`);
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Ein Fehler ist aufgetreten. Bitte kontaktieren Sie den Support.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [calculateTotal, createBookings, router]);
 
   return (
     <div className="min-h-screen bg-neutral-900 p-4">
-      {showId && seats.length > 0 && (
-        <Script 
-          src={`https://www.paypal.com/sdk/js?client-id=${clientId}&currency=EUR&merchant-id=${merchantId}`}
-          strategy="afterInteractive"
-        />
-      )}
-      
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="bg-neutral-800 rounded-lg p-4">
           <h2 className="text-xl font-semibold text-white mb-4">Ausgewählte Sitzplätze</h2>
@@ -359,7 +307,22 @@ function CheckoutContent() {
 
         <PriceOverview numberOfSeats={seats.length} seatIds={seats} showId={showId} />
         
-        <div id="paypal-button-container" className="min-h-[150px] bg-white rounded-lg p-4" />
+        <div className="bg-white rounded-lg p-4">
+          <PayPalScriptProvider options={paypalOptions}> 
+            <PayPalButtons
+              createOrder={async (_, actions) => {
+                const order = await createPayPalOrder();
+                if (!order) throw new Error('Could not create order');
+                return actions.order.create({
+                  intent: "CAPTURE",
+                  ...order
+                });
+              }}
+              onApprove={handlePayPalApprove}
+              style={{ layout: "vertical" }}
+            />
+          </PayPalScriptProvider>
+        </div>
       </div>
 
       {isLoading && (
