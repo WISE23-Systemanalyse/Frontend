@@ -1,5 +1,6 @@
 "use server"
 import { z } from "zod"
+import { hash} from "bcrypt"
 
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -23,7 +24,10 @@ export async function signUp(formData: FormData) {
     return { success: false, error: `Invalid input: ${errors}` }
   }
 
-  const { email, userName, password, firstName, lastName } = validatedFields.data
+  const hasPass = await hash(validatedFields.data.password, 10)
+  console.log("log: hashPass " + hasPass)
+
+  const { email, userName, firstName, lastName } = validatedFields.data
 
   try {
     const response = await fetch(`${process.env.BACKEND_URL}/signup`, {
@@ -32,11 +36,11 @@ export async function signUp(formData: FormData) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email,
-        userName,
-        password,
-        firstName,
-        lastName
+        email: email.toLowerCase()!,
+        userName: userName.toLowerCase()!,
+        password: hasPass.toString()!,
+        firstName: firstName!,
+        lastName: lastName!
       }),
     })
 

@@ -1,18 +1,6 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-
-declare module "next-auth" {
-  interface JWT {
-    id: string
-    email: string
-    accessToken: string
-  }
-  interface User {
-    id: string
-    email: string
-    accessToken: string
-  }
-}
+import { User } from "@/types/user"
 
 const handler = NextAuth({
   providers: [
@@ -23,16 +11,13 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
         try {
           const res = await fetch(`${process.env.BACKEND_URL}/signin`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
+              email: credentials?.email,
+              password: credentials?.password,
             }),
           })
 
@@ -40,16 +25,9 @@ const handler = NextAuth({
             const error = await res.json()
             throw new Error(error.error || "Authentication failed")
           }
-
           const data = await res.json()
-          // Decode the JWT token to get user information
-          const tokenString = data.token.token
-          return {
-            id: data.userId || '', // Ensure you have userId in your API response
-            email: data.email,
-            userName: data.userName,
-            accessToken: tokenString,
-          }
+          console.log(data.user);
+          return data.token.user
         } catch (error) {
           console.error("Authorization error:", error)
           throw error // Propagate the error to show in the UI
@@ -61,20 +39,20 @@ const handler = NextAuth({
     signIn: "/auth/signin",
   },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.accessToken = user.accessToken
-
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === "update" && session) {
+        // Update the token with the new user data
+        return { ...token, ...session };
       }
-      return token
+      return { ...token, ...user };
     },
     async session({ session, token }) {
-      session.user.accessToken = token.accessToken
-      return session
+      session.user = token as unknown as User;
+      return session;
     },
   },
+  secret: process.env.NEXTAUTH_SECRET,
 })
 
 export const GET = handler
 export const POST = handler
-
