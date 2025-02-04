@@ -16,13 +16,13 @@ export default function SignUp() {
     try {
       const result = await signUp(formData);
       if (result.success) {
-        setUserEmail(result.email);
+        setUserEmail(formData.get('email') as string);
         setShowVerification(true);
       } else {
         setError(result.error);
       }
     } catch (error) {
-      setError('An error occurred during registration');
+      setError('An error occurred during registration' + error);
     }
   };
 

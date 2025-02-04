@@ -3,13 +3,17 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
-
+import { useState } from 'react';
+import EditProfileForm from './edit-profile-form';
 
 interface ProfileHeaderProps {
   user: User;
+  onProfileUpdate: (updatedUser: User) => void;
 }
 
-export default function ProfileHeader({ user }: ProfileHeaderProps) {
+export default function ProfileHeader({ user, onProfileUpdate }: ProfileHeaderProps) {
+  const [isEditing, setIsEditing] = useState(false);
+
   const getInitials = () => {
     if (!user.firstName || !user.lastName) {
       return 'Username';
@@ -44,6 +48,12 @@ export default function ProfileHeader({ user }: ProfileHeaderProps) {
             <h1 className="text-2xl font-bold text-white">{`${user.firstName} ${user.lastName}`}</h1>
             <p className="text-gray-400">{user.email}</p>
             <p className="text-gray-500">@{user.userName}</p>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="mt-2 px-4 py-2 bg-blue-600 rounded hover:bg-blue-500"
+            >
+              Edit Profile
+            </button>
           </div>
         </div>
       </CardHeader>
@@ -57,6 +67,13 @@ export default function ProfileHeader({ user }: ProfileHeaderProps) {
             Ausloggen
           </Button>
         </div>
+        {isEditing && (
+          <EditProfileForm
+            user={user}
+            onClose={() => setIsEditing(false)}
+            onUpdate={onProfileUpdate}
+          />
+        )}
       </CardContent>
     </Card>
   );
