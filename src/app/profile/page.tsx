@@ -6,7 +6,6 @@ import ProfileHeader from '@/components/profile/profile-header';
 import ProfileTabs from '@/components/profile/profile-tabs';
 import { User } from '@/types/user';
 
-
 const ProfilePage = () => {
   const [user, setUser] = useState<User>();
   const { data: session, status } = useSession({
@@ -18,9 +17,7 @@ const ProfilePage = () => {
 
   useEffect(() => {
     if (session) {
-      console.log(session.user);
       setUser(session.user);
-
     }
   }, [session]);
 
@@ -29,14 +26,22 @@ const ProfilePage = () => {
   };
 
   if (status === 'loading' || !user) {
-    return <div className="flex justify-center items-center h-screen bg-black text-white">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen bg-[#141414]">
+        <div className="animate-pulse text-red-600">Laden...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <ProfileHeader user={user} onProfileUpdate={handleProfileUpdate} />
-        <ProfileTabs />
+    <div className="min-h-screen bg-[#141414]">
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+        <div className="bg-[#2C2C2C] rounded-lg p-6">
+          <ProfileHeader user={user} onProfileUpdate={handleProfileUpdate} />
+        </div>
+        <div className="bg-[#2C2C2C] rounded-lg p-6">
+          <ProfileTabs />
+        </div>
       </div>
     </div>
   );
