@@ -3,6 +3,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Film, User } from 'lucide-react'
+import { useSession, signOut } from 'next-auth/react'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -20,17 +21,10 @@ const navItems = [
   { name: 'Kontakt', href: '/contact' },
 ]
 
-const ProfileITems = [
-    { name: 'Your Profile', href: '/profile' },
-    { name: 'Settings', href: '/settings' },
-    { name: 'Sign out', href: '/' },
-]
-
-
-
 export default function Navbar() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
+  const { data: session } = useSession()
 
   return (
     <nav className="bg-black text-white sticky top-0 z-10">
@@ -67,22 +61,33 @@ export default function Navbar() {
                     className="flex text-sm rounded-full text-white hover:bg-red-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
                     <span className="sr-only">Open user menu</span>
-                    {
-                      
-                    }
                     <User className="h-6 w-6" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-[#3C3C3C] border-0">
-                  <DropdownMenuItem className="hover:bg-red-500 focus:bg-red-500">
-                    <Link href="/profile" className="w-full text-white">Your Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="hover:bg-red-500 focus:bg-red-500">
-                    <Link href="/settings" className="w-full text-white">Settings</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="hover:bg-red-500 focus:bg-red-500">
-                    <Link href="/sign-out" className="w-full text-white">Sign out</Link>
-                  </DropdownMenuItem>
+                  {session ? (
+                    <>
+                      <DropdownMenuItem className="hover:bg-red-500 focus:bg-red-500">
+                        <Link href="/profile" className="w-full text-white">
+                          Profil
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="hover:bg-red-500 focus:bg-red-500"
+                        onClick={() => signOut({ callbackUrl: '/' })}
+                      >
+                        <span className="w-full text-white cursor-pointer">
+                          Ausloggen
+                        </span>
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <DropdownMenuItem className="hover:bg-red-500 focus:bg-red-500">
+                      <Link href="/auth/signin" className="w-full text-white">
+                        Anmelden
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -127,28 +132,46 @@ export default function Navbar() {
           ))}
         </div>
         <div className="pt-4 pb-3 border-t border-gray-200">
-          <div className="flex items-center px-4">
-            <div className="flex-shrink-0">
-              <User className="h-10 w-10 rounded-full" />
+          {session ? (
+            <>
+              <div className="flex items-center px-4">
+                <div className="flex-shrink-0">
+                  <User className="h-10 w-10 rounded-full" />
+                </div>
+                <div className="ml-3">
+                  <div className="text-base font-medium text-white">
+                    {session.user?.name || 'Benutzer'}
+                  </div>
+                  <div className="text-sm font-medium text-gray-400">
+                    {session.user?.email}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 space-y-1">
+                <Link
+                  href="/profile"
+                  className="block px-4 py-2 text-base font-medium text-gray-400 hover:text-white hover:bg-red-500"
+                >
+                  Profil
+                </Link>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-400 hover:text-white hover:bg-red-500"
+                >
+                  Ausloggen
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="mt-3 space-y-1">
+              <Link
+                href="/auth/signin"
+                className="block px-4 py-2 text-base font-medium text-gray-400 hover:text-white hover:bg-red-500"
+              >
+                Anmelden
+              </Link>
             </div>
-            <div className="ml-3">
-              <div className="text-base font-medium text-gray-800">User Name</div>
-              <div className="text-sm font-medium text-gray-500">user@example.com</div>
-            </div>
-          </div>
-          <div className="mt-3 space-y-1">
-            {
-                ProfileITems.map((item) => (
-                    <Link
-                        key={item.name}
-                        href={item.href}
-                        className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-                    >
-                        {item.name}
-                    </Link>
-                ))
-            }
-          </div>
+          )}
         </div>
       </div>
     </nav>
