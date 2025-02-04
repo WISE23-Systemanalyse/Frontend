@@ -139,9 +139,6 @@ export default function Navbar() {
                   <User className="h-10 w-10 rounded-full" />
                 </div>
                 <div className="ml-3">
-                  <div className="text-base font-medium text-white">
-                    {session.user?.name || 'Benutzer'}
-                  </div>
                   <div className="text-sm font-medium text-gray-400">
                     {session.user?.email}
                   </div>

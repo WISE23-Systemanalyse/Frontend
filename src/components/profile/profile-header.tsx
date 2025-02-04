@@ -1,8 +1,6 @@
 import { User } from "@/types/user";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { signOut } from "next-auth/react";
 import { useState } from 'react';
 import EditProfileForm from './edit-profile-form';
 
@@ -17,10 +15,6 @@ export default function ProfileHeader({ user, onProfileUpdate }: ProfileHeaderPr
   const getInitials = () => {
     if (!user.firstName || !user.lastName) return 'U';
     return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`;
-  };
-
-  const handleLogout = () => {
-    signOut({ callbackUrl: '/' });
   };
 
   console.log('Debug - Image URL:', user.imageUrl); // Debug log
