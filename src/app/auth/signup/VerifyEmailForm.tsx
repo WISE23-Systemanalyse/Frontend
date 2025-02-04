@@ -22,8 +22,8 @@ export default function VerifyEmailForm({ email }: { email: string }) {
     <form action={handleSubmit} className="space-y-4">
       {error && <p className="text-red-500 text-center">{error}</p>}
       <div>
-        <label htmlFor="email" className="block text-sm font-medium">
-          Email
+        <label htmlFor="email" className="block text-sm font-medium text-gray-400">
+          E-Mail
         </label>
         <input
           id="email"
@@ -31,12 +31,12 @@ export default function VerifyEmailForm({ email }: { email: string }) {
           type="email"
           value={email}
           readOnly
-          className="mt-1 block w-full rounded-md border p-2 bg-gray-100"
+          className="mt-1 block w-full rounded-md bg-[#3C3C3C] border-0 text-gray-400"
         />
       </div>
       <div>
-        <label htmlFor="code" className="block text-sm font-medium">
-          Verification Code
+        <label htmlFor="code" className="block text-sm font-medium text-gray-400">
+          Bestätigungscode
         </label>
         <input
           id="code"
@@ -44,11 +44,14 @@ export default function VerifyEmailForm({ email }: { email: string }) {
           type="text"
           required
           maxLength={6}
-          className="mt-1 block w-full rounded-md border p-2 text-center text-2xl tracking-widest"
+          className="mt-1 block w-full rounded-md bg-[#3C3C3C] border-0 text-white text-center text-2xl tracking-widest focus:ring-1 focus:ring-red-500"
         />
       </div>
-      <button type="submit" className="w-full bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600">
-        Verify Email
+      <button 
+        type="submit" 
+        className="w-full bg-red-600 hover:bg-red-700 text-white rounded-md p-2 transition-colors"
+      >
+        E-Mail bestätigen
       </button>
     </form>
   )

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { User } from '@/types/user';
 import { useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
 
 interface EditProfileFormProps {
   user: User;
@@ -11,7 +12,8 @@ interface EditProfileFormProps {
 export default function EditProfileForm({ user, onClose, onUpdate }: EditProfileFormProps) {
   const { update } = useSession();
   const [formData, setFormData] = useState({
-    name: user.firstName,
+    firstName: user.firstName,
+    lastName: user.lastName,
     image: user.imageUrl || '',
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +36,7 @@ export default function EditProfileForm({ user, onClose, onUpdate }: EditProfile
       }
 
       const updatedUser = await response.json();
-      await update(updatedUser); // Update the session
+      await update(updatedUser);
       onUpdate(updatedUser);
       onClose();
     } catch (error) {
@@ -45,43 +47,61 @@ export default function EditProfileForm({ user, onClose, onUpdate }: EditProfile
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
-        <h2 className="text-xl font-bold mb-4">Edit Profile</h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-[#2C2C2C] rounded-lg p-6 max-w-md w-full">
+        <h2 className="text-xl font-bold text-white mb-6">Profil bearbeiten</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block mb-2">Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full p-2 rounded bg-gray-700"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">
+                Vorname
+              </label>
+              <input
+                type="text"
+                value={formData.firstName}
+                onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                className="w-full px-3 py-2 rounded-md bg-[#3C3C3C] border-0 text-white placeholder-gray-400 focus:ring-1 focus:ring-red-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">
+                Nachname
+              </label>
+              <input
+                type="text"
+                value={formData.lastName}
+                onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                className="w-full px-3 py-2 rounded-md bg-[#3C3C3C] border-0 text-white placeholder-gray-400 focus:ring-1 focus:ring-red-500"
+              />
+            </div>
           </div>
           <div>
-            <label className="block mb-2">Profile Image URL</label>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Profilbild URL
+            </label>
             <input
               type="text"
               value={formData.image}
               onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
-              className="w-full p-2 rounded bg-gray-700"
+              className="w-full px-3 py-2 rounded-md bg-[#3C3C3C] border-0 text-white placeholder-gray-400 focus:ring-1 focus:ring-red-500"
             />
           </div>
-          <div className="flex justify-end space-x-3">
-            <button
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded bg-gray-600 hover:bg-gray-500"
+              variant="outline"
+              className="bg-transparent border-gray-600 text-white hover:bg-[#3C3C3C]"
             >
-              Cancel
-            </button>
-            <button
+              Abbrechen
+            </Button>
+            <Button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500"
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {isLoading ? 'Saving...' : 'Save'}
-            </button>
+              {isLoading ? 'Speichern...' : 'Speichern'}
+            </Button>
           </div>
         </form>
       </div>
