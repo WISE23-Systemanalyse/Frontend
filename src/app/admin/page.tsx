@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Card } from "@/components/ui/card"
 import { useRouter } from 'next/navigation'
-import { Film, Sofa, Calendar, Users, ArrowRight, BookOpen } from 'lucide-react'
+import { Film, Sofa, Calendar, Users, ArrowRight, Armchair, BookOpen } from 'lucide-react'
 
 interface DashboardStats {
   activeMovies: number
@@ -31,6 +31,14 @@ const dashboardItems = [
     width: 'md:col-span-1'
   },
   {
+    title: 'Sitzplatzkategorien',
+    description: 'Kategorien für Sitzplätze verwalten',
+    icon: Armchair,
+    color: 'bg-orange-500',
+    link: '/admin/categories',
+    width: 'md:col-span-1'
+  },
+  {
     title: 'Vorstellungen',
     description: 'Filmvorstellungen und Spielzeiten verwalten',
     icon: Calendar,
@@ -52,7 +60,7 @@ const dashboardItems = [
     icon: BookOpen,
     color: 'bg-pink-500',
     link: '/admin/booking',
-    width: 'md:col-span-2'
+    width: 'md:col-span-1'
   }
 ]
 

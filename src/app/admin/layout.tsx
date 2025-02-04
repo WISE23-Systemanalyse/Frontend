@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Sofa,
   BookOpen,
+  Armchair,
 } from 'lucide-react'
 
 export default function AdminLayout({
@@ -87,6 +88,20 @@ export default function AdminLayout({
             <Sofa size={20} className="min-w-[20px]" />
             <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
               Säle
+            </span>
+          </Link>
+
+          <Link href="/admin/categories"
+            className={`
+              flex items-center
+              px-3 py-2 rounded-md
+              transition-colors
+              ${isActive('/admin/categories')}
+            `}
+          >
+            <Armchair size={20} className="min-w-[20px]" />
+            <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+              Sitzplatzkategorien
             </span>
           </Link>
 
