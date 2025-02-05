@@ -2,37 +2,39 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Show, Movie, Seat } from "@/types/index";
-import DatePicker from "@/components/movie-booking/date-picker";
-import TimePicker from "@/components/movie-booking/time-picker";
 import MovieInfo from "@/components/movie-booking/movie-info";
 import { HallLayout } from "@/components/hall/HallLayout";
 import { Card, CardContent } from "@/components/ui/card";
+import { ChevronLeft } from "lucide-react";
+
+interface ShowGroups {
+  [key: string]: Show[];
+}
 
 export default function MovieDetail() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const showId = searchParams.get("showId");
-  const dateParam = searchParams.get("date");
-  const monthParam = searchParams.get("month");
 
   const [movie, setMovie] = useState<Movie | null>(null);
-  const [shows, setShows] = useState<Show[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
   const [error, setError] = useState<string | null>(null);
+  const [showGroups, setShowGroups] = useState<ShowGroups>({});
 
-  const [selectedDate, setSelectedDate] = useState(
-    dateParam ? parseInt(dateParam, 10) : new Date().getDate()
+  const [selectedDate] = useState(new Date().getDate());
+  const [selectedMonth] = useState(
+    new Date().toLocaleString("de-DE", { month: "long" })
   );
-  const [selectedMonth, setSelectedMonth] = useState(
-    monthParam || new Date().toLocaleString("de-DE", { month: "long" })
+  
+  const [selectedShowId, setSelectedShowId] = useState<number | undefined>(
+    showId ? parseInt(showId) : undefined
   );
-  const [selectedShowId, setSelectedShowId] = useState<number | undefined>((showId)? parseInt(showId, 10) : undefined);
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
-  const [showSeatSelection, setShowSeatSelection] = useState(false);
 
-  // Optimiere Movie und Shows Fetching
+  const [showHallLayout, setShowHallLayout] = useState(!!showId);
+  const [show, setShow] = useState<Show | null>(null);
+
   useEffect(() => {
     const fetchMovieAndShows = async () => {
       try {
@@ -53,7 +55,49 @@ export default function MovieDetail() {
         ]);
 
         setMovie(movieData);
-        setShows(showsData);
+
+        // Gruppierung der Shows direkt ohne Zwischenspeicherung
+        const currentTime = new Date();
+        const grouped = showsData
+          .filter((show: Show) => new Date(show.start_time) > currentTime)
+          .reduce((acc: ShowGroups, show: Show) => {
+            const showDate = new Date(show.start_time);
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            const dateKey = showDate.toDateString() === today.toDateString()
+              ? 'Heute'
+              : showDate.toDateString() === tomorrow.toDateString()
+                ? 'Morgen'
+                : showDate.toLocaleDateString('de-DE', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  });
+            
+            if (!acc[dateKey]) {
+              acc[dateKey] = [];
+            }
+            acc[dateKey].push(show);
+            return acc;
+          }, {});
+
+        setShowGroups(grouped);
+
+        // Wenn showId vorhanden ist, lade die vollständigen Show-Details
+        if (showId) {
+          const response = await fetch(`${process.env.BACKEND_URL}/shows/${showId}`);
+          if (!response.ok) throw new Error("Show nicht gefunden");
+          
+          const showDetails = await response.json();
+          console.log("Show Details:", showDetails);
+          setShow(showDetails);
+          setSelectedShowId(parseInt(showId));
+          setShowHallLayout(true);
+        }
+
       } catch (err) {
         setError(err instanceof Error ? err.message : "Ein Fehler ist aufgetreten");
       } finally {
@@ -62,15 +106,38 @@ export default function MovieDetail() {
     };
 
     fetchMovieAndShows();
-  }, [params.id]); // Nur von params.id abhängig
+  }, [params.id, showId]);
+
+  // Hilfsfunktion für die Formatierung der Zeit
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('de-DE', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
 
   // Memoize die Callbacks
-  const handleShowSelect = useCallback((showId: number) => {
-    setSelectedShowId(showId);
-  }, []);
+  const handleShowSelect = async (show: Show) => {
+    console.log("Selected Show:", show);
+    try {
+      const response = await fetch(`${process.env.BACKEND_URL}/shows/${show.show_id}`);
+      if (!response.ok) throw new Error("Show nicht gefunden");
+      const showDetails = await response.json();
+      console.log("Show Details:", showDetails);
+      setShow(showDetails);
+      setShowHallLayout(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ein Fehler ist aufgetreten");
+    }
+  };
 
   const handleSeatSelection = useCallback((seats: Seat[]) => {
-    setSelectedSeats(seats);
+    // Verzögere das State-Update
+    requestAnimationFrame(() => {
+      setSelectedSeats(seats);
+    });
   }, []);
 
   const handleCheckout = useCallback(async () => {
@@ -104,6 +171,13 @@ export default function MovieDetail() {
     }
   }, [selectedShowId, selectedSeats, router]);
 
+  // Zurück zur Vorstellungsauswahl
+  const handleBack = () => {
+    setShowHallLayout(false);
+    setSelectedShowId(undefined);
+    setSelectedSeats([]);
+  };
+
   React.useEffect(() => {
     setSelectedShowId(undefined);
   }, [selectedDate, selectedMonth]);
@@ -114,7 +188,6 @@ export default function MovieDetail() {
     
     if (params.get('showSeats') === 'true' && showId) {
       setSelectedShowId(parseInt(showId, 10));  // String zu Number konvertieren
-      setShowSeatSelection(true);
     }
   }, []);
 
@@ -149,91 +222,119 @@ export default function MovieDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-900 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Movie Information Section */}
-        <Card className="bg-neutral-800/50 border-neutral-700">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="min-h-screen bg-[#141414] p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header mit Zurück-Button und Titel */}
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => router.back()}
+            className="w-10 h-10 rounded-full bg-[#2C2C2C] hover:bg-red-600/20 
+                       flex items-center justify-center transition-all duration-200 group"
+            aria-label="Zurück"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-white transition-transform group-hover:-translate-x-0.5" />
+          </button>
+          <h1 className="text-2xl font-bold text-white">
+            {movie.title}
+          </h1>
+        </div>
+
+        {/* Content Card */}
+        <Card className="bg-[#2C2C2C] border-0 shadow-lg">
+          <CardContent className="p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="lg:col-span-1">
-                <MovieInfo
-                  id={movie.id}
-                  title={movie.title}
-                  description={movie.description}
-                  rating={movie.rating}
-                  genres={movie.genres}
-                  duration={movie.duration}
-                  imageUrl={movie.imageUrl}
-                  year={movie.year}
-                />
+                <MovieInfo {...movie} />
               </div>
 
-              <div className="lg:col-span-2 space-y-6">
-                {/* Booking Section */}
-                <div className="space-y-6">
-                  <div className="bg-neutral-800 rounded-lg p-4">
-                    <h2 className="text-xl font-semibold text-white mb-4">
-                      Vorstellung wählen
-                    </h2>
-                    <DatePicker
-                      selectedDate={selectedDate}
-                      setSelectedDate={setSelectedDate}
-                      selectedMonth={selectedMonth}
-                      setSelectedMonth={setSelectedMonth}
-                    />
+              <div className="lg:col-span-2 space-y-8">
+                {!showHallLayout ? (
+                  // Vorstellungsauswahl
+                  <div className="space-y-6">
+                    {Object.entries(showGroups)
+                      .sort(([dateA], [dateB]) => {
+                        if (dateA === 'Heute') return -1;
+                        if (dateB === 'Heute') return 1;
+                        if (dateA === 'Morgen') return -1;
+                        if (dateB === 'Morgen') return 1;
+                        return 0;
+                      })
+                      .map(([date, dayShows]) => (
+                        <div key={date} className="bg-[#1C1C1C] rounded-xl p-6 shadow-md">
+                          <div className="flex items-center gap-4 mb-6">
+                            <h2 className="text-2xl font-bold text-white">{date}</h2>
+                            <div className="text-gray-400 flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                              {dayShows.length} {dayShows.length === 1 ? 'Vorstellung' : 'Vorstellungen'}
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            {dayShows.map((show) => (
+                              <button
+                                key={show.show_id}
+                                onClick={() => handleShowSelect(show)}
+                                className={`
+                                  p-4 rounded-lg text-center transition-all duration-200
+                                  ${selectedShowId === show.show_id 
+                                    ? 'bg-red-600 text-white scale-105' 
+                                    : 'bg-[#2C2C2C] hover:bg-red-600/20 text-gray-300 hover:text-white hover:scale-105'}
+                                `}
+                              >
+                                <div className="text-lg font-semibold">
+                                  {formatTime(show.start_time)} Uhr
+                                </div>
+                                <div className="text-sm mt-1 opacity-80">
+                                  Saal {show.hall_name}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                   </div>
+                ) : (
+                  // Saalansicht
+                  <div className="space-y-8">
+                    <div className="bg-[#1C1C1C] rounded-xl p-6 shadow-md">
+                      <div className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 cursor-pointer group" onClick={handleBack}>
+                        <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+                        <span>Zurück zur Vorstellungsauswahl</span>
+                      </div>
 
-                  <div className="bg-neutral-800 rounded-lg p-4">
-                    <h2 className="text-xl font-semibold text-white mb-4">
-                      Verfügbare Zeiten
-                    </h2>
-                    <TimePicker
-                      shows={shows}
-                      selectedDate={selectedDate}
-                      selectedMonth={selectedMonth}
-                      onShowSelect={handleShowSelect}
-                      selectedShowId={selectedShowId}
-                    />
-                  </div>
-                </div>
+                      <h2 className="text-2xl font-bold text-white mb-4">
+                        Sitzplatz wählen
+                      </h2>
+                      <HallLayout
+                        show={show!}
+                        onSeatSelectAction={handleSeatSelection}
+                      />
+                    </div>
 
-                {/* Seat Selection */}
-                {selectedShowId && (
-                  <div className="bg-neutral-800 rounded-lg p-4">
-                    <h2 className="text-xl font-semibold text-white mb-4">
-                      Sitzplatz wählen
-                    </h2>
-                    <HallLayout
-                      showID={selectedShowId}
-                      onSeatSelectAction={handleSeatSelection}
-                    />
+                    <div className="flex justify-center pt-4">
+                      <button
+                        onClick={handleCheckout}
+                        disabled={selectedSeats.length === 0}
+                        className={`
+                          px-8 py-3 rounded-lg text-lg font-medium
+                          transition-all duration-200 transform
+                          ${selectedSeats.length === 0 
+                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                            : 'bg-red-600 hover:bg-red-700 text-white hover:scale-105'}
+                        `}
+                      >
+                        {selectedSeats.length > 0 
+                          ? `${selectedSeats.length} ${selectedSeats.length === 1 ? 'Platz' : 'Plätze'} buchen` 
+                          : 'Bitte Plätze auswählen'}
+                      </button>
+                    </div>
                   </div>
                 )}
-
-                {/* Checkout Button */}
-                <div className="flex justify-center">
-                  <button
-                    onClick={()=>handleCheckout()}
-                    className={`bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors ${
-                      selectedSeats.length < 1 ? "opacity-20" : ""
-                    }`}
-                    disabled={selectedSeats.length < 1 ? true : false}
-                  >
-                    Buchen
-                  </button>
-                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-      
-      {/* Sitzplatzauswahl Modal/Komponente */}
-      {showSeatSelection && selectedShowId && (
-        <div className="...">
-          {/* Sitzplatzauswahl Inhalt */}
-        </div>
-      )}
     </div>
   );
 }

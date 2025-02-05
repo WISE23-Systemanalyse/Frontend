@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,13 +26,13 @@ interface NewSeat {
 
 const API_BASE_URL = process.env.BACKEND_URL;
 
-// Initialisiere 5 Reihen mit je 10 Sitzen
+// Initialisiere 5 Reihen mit je 10 Sitzen mit der Standard-Kategorie (ID 1)
 const INITIAL_SEATS = Array.from({ length: 50 }, (_, index) => ({
   id: -(index + 1),
   hall_id: 0,
   row_number: Math.floor(index / 10) + 1,
   seat_number: (index % 10) + 1,
-  category_id: 1 // Standard = 1
+  category_id: 1  // Stellen Sie sicher, dass diese ID in der Datenbank existiert
 }));
 
 export default function CreateHall() {
@@ -49,6 +49,24 @@ export default function CreateHall() {
     variant: 'default',
     isVisible: false
   });
+  const [categories, setCategories] = useState<[]>([]);
+
+  // Füge useEffect hinzu, um Kategorien zu laden und zu loggen
+  useEffect(() => {
+    console.log(categories);
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/categories`);
+        const data = await response.json();
+        console.log('Verfügbare Kategorien:', data);
+        setCategories(data);
+      } catch (error) {
+        console.error('Fehler beim Laden der Kategorien:', error);
+      }
+    };
+
+    fetchCategories();
+  },);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

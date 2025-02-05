@@ -21,7 +21,7 @@ const API_BASE_URL = process.env.BACKEND_URL;
 // Aktualisierte Helfer-Funktion mit den gleichen Farben wie im SeatEditor
 const getCategoryStyle = (categoryName: string) => {
   switch (categoryName.toLowerCase()) {
-    case 'standart':
+    case 'standard':
       return {
         icon: <Square size={48} className="text-emerald-500" />,
         textColor: 'text-white',
@@ -49,6 +49,20 @@ const getCategoryStyle = (categoryName: string) => {
         bgColor: 'bg-[#2C2C2C]',
         hoverBgColor: 'hover:bg-[#3C3C3C]'
       };
+  }
+};
+
+// Hilfsfunktion für die Sortierreihenfolge
+const getCategoryOrder = (categoryName: string): number => {
+  switch (categoryName.toLowerCase()) {
+    case 'standard':
+      return 1;
+    case 'premium':
+      return 2;
+    case 'vip':
+      return 3;
+    default:
+      return 4;
   }
 };
 
@@ -94,7 +108,7 @@ export default function CategoriesPage() {
   const handleEdit = (category: Category) => {
     setEditing({
       id: category.id,
-      price: (category.surcharge / 100).toFixed(2)
+      price: (category.surcharge).toFixed(2)
     });
   };
 
@@ -105,18 +119,21 @@ export default function CategoriesPage() {
 
   const handleSave = async (categoryId: number) => {
     try {
-      const cents = Math.round(parseFloat(editing.price) * 100);
+      // Konvertiere den Euro-Betrag in Cent für die API
+      const euros = parseFloat(editing.price);
       const response = await fetch(`${API_BASE_URL}/categories/${categoryId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          surcharge: cents
+          id: categoryId,
+          category_name: categories.find(cat => cat.id === categoryId)?.category_name,
+          surcharge: euros
         }),
       });
 
       if (response.ok) {
         setCategories(prev => prev.map(cat => 
-          cat.id === categoryId ? { ...cat, surcharge: cents } : cat
+          cat.id === categoryId ? { ...cat, surcharge: euros } : cat
         ));
         setEditing({ id: null, price: '' });
         setToast({
@@ -159,70 +176,74 @@ export default function CategoriesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map(category => {
-              const categoryStyle = getCategoryStyle(category.category_name);
-              return (
-                <div 
-                  key={category.id} 
-                  className={`${categoryStyle.bgColor} rounded-lg p-6 ${categoryStyle.hoverBgColor} transition-colors`}
-                >
-                  <div className="flex flex-col items-center mb-4">
-                    <div className="w-full flex justify-center mb-4">
-                      <div className="w-24 h-24 bg-black/20 rounded-lg flex items-center justify-center">
-                        {categoryStyle.icon}
-                      </div>
-                    </div>
-                    <h2 className={`text-xl font-bold ${categoryStyle.textColor} mb-2`}>
-                      {category.category_name}
-                    </h2>
-                    {editing.id === category.id ? (
-                      <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <Input
-                            type="text"
-                            value={editing.price}
-                            onChange={(e) => handlePriceChange(e.target.value)}
-                            className="bg-black/20 text-white border-0 pl-7 w-32 focus:ring-1 focus:ring-white/20"
-                          />
-                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60">
-                            €
-                          </span>
+            {categories
+              .sort((a, b) => getCategoryOrder(a.category_name) - getCategoryOrder(b.category_name))
+              .map(category => {
+                const categoryStyle = getCategoryStyle(category.category_name);
+                return (
+                  <div 
+                    key={category.id} 
+                    className={`${categoryStyle.bgColor} rounded-lg p-6 ${categoryStyle.hoverBgColor} transition-colors`}
+                  >
+                    <div className="flex flex-col items-center mb-4">
+                      <div className="w-full flex justify-center mb-4">
+                        <div className="w-24 h-24 bg-black/20 rounded-lg flex items-center justify-center">
+                          {categoryStyle.icon}
                         </div>
                       </div>
-                    ) : (
-                      <p className="text-white/80">
-                        Aufpreis: {(category.surcharge / 100).toFixed(2)}€
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    {editing.id === category.id ? (
-                      <>
+                      <h2 className={`text-xl font-bold ${categoryStyle.textColor} mb-2`}>
+                        {category.category_name}
+                      </h2>
+                      {editing.id === category.id ? (
+                        <div className="flex items-center gap-2">
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              value={editing.price}
+                              onChange={(e) => handlePriceChange(e.target.value)}
+                              className="bg-black/20 text-white border-0 pl-7 w-32 focus:ring-1 focus:ring-white/20"
+                              step="0.01"
+                              min="0"
+                            />
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60">
+                              €
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-white/80">
+                          Aufpreis: {category.surcharge.toFixed(2)}€
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      {editing.id === category.id ? (
+                        <>
+                          <Button 
+                            onClick={() => handleSave(category.id)}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            Speichern
+                          </Button>
+                          <Button 
+                            onClick={() => setEditing({ id: null, price: '' })}
+                            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white"
+                          >
+                            Abbrechen
+                          </Button>
+                        </>
+                      ) : (
                         <Button 
-                          onClick={() => handleSave(category.id)}
-                          className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                          onClick={() => handleEdit(category)}
+                          className="flex-1 bg-[#3C3C3C] hover:bg-[#4C4C4C] text-white"
                         >
-                          Speichern
+                          Aufpreis ändern
                         </Button>
-                        <Button 
-                          onClick={() => setEditing({ id: null, price: '' })}
-                          className="flex-1 bg-gray-600 hover:bg-gray-700 text-white"
-                        >
-                          Abbrechen
-                        </Button>
-                      </>
-                    ) : (
-                      <Button 
-                        onClick={() => handleEdit(category)}
-                        className="flex-1 bg-[#3C3C3C] hover:bg-[#4C4C4C] text-white"
-                      >
-                        Aufpreis ändern
-                      </Button>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         )}
       </div>
