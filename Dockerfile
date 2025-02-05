@@ -13,6 +13,14 @@ RUN npm install
 # Copy the entire Next.js app into the container
 COPY /src ./
 
+# Build arguments definieren
+ARG NEXT_PUBLIC_PAYPAL_CLIENT_ID
+ARG NEXT_PUBLIC_PAYPAL_MERCHANT_ID
+
+# Als Umgebungsvariablen setzen
+ENV NEXT_PUBLIC_PAYPAL_CLIENT_ID=$NEXT_PUBLIC_PAYPAL_CLIENT_ID
+ENV NEXT_PUBLIC_PAYPAL_MERCHANT_ID=$NEXT_PUBLIC_PAYPAL_MERCHANT_ID
+
 # Build the Next.js app
 RUN npm run build
 
