@@ -8,7 +8,8 @@ interface Show {
         title: string;
         description: string;
         image_url: string;
-        name: string;
+        hall_name: string;
+        duration: number;
 }
 
 interface Props {
@@ -25,6 +26,8 @@ export const fetchShows = async (props: Props): Promise<Show[]> => {
       const response = await fetch(`${process.env.BACKEND_URL}/shows/details`);
       console.log('Response Status:', response.status);
       console.log('Response Headers:', Object.fromEntries(response.headers));
+
+      console.log('Response Body:', response.body);
       
       if (!response.ok) {
         throw new Error('Shows konnten nicht geladen werden');

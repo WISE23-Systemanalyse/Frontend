@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Movie, Show, Seat } from "@/types/index";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,6 +38,7 @@ export function MovieBookingLayout({
 }: MovieBookingLayoutProps) {
   const router = useRouter();
   const [showHallLayout, setShowHallLayout] = useState(!showTimes);
+  const [selectedShow, setSelectedShow] = useState<Show | null>(null);
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -62,6 +63,17 @@ export function MovieBookingLayout({
       timeZone: 'UTC'
     });
   };
+
+  useEffect(() => {
+    if (selectedShowId) {
+      const fetchShow = async () => {
+        const response = await fetch(`${process.env.BACKEND_URL}/shows/${selectedShowId}`);
+        const show = await response.json();
+        setSelectedShow(show);
+      };
+      fetchShow();
+    }
+  }, [selectedShowId]);
 
   return (
     <div className="min-h-screen bg-[#141414] p-4">
@@ -168,7 +180,7 @@ export function MovieBookingLayout({
                         {show && `${formatDateTime(show.start_time).date} um ${formatDateTime(show.start_time).time} Uhr • Saal ${show.hall_name}`}
                       </div>
                       <HallLayout
-                        showID={selectedShowId!}
+                        show={selectedShow!}
                         onSeatSelectAction={onSeatSelect}
                       />
                     </div>
