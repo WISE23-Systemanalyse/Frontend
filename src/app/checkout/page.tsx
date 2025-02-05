@@ -5,71 +5,16 @@ import Script from 'next/script';
 import PriceOverview from '@/components/booking/PriceOverview';
 import SeatSelection from '@/components/booking/SeatSelection';
 import { useSession } from 'next-auth/react';
-interface Category {
-  id: number;
-  name: string;
-  price: number;
-  surcharge: number;
-  [key: string]: string | number; // für zusätzliche dynamische Eigenschaften
-}
-
-interface SeatWithCategory {
-  id: number;
-  row_number: number;
-  seat_number: number;
-  hall_id: number;
-  category_id: number;
-  category: Category;
-}
-
-interface ShowDetails {
-  id: number;
-  base_price: number;
-  datetime: string;
-  movie_id: number;
-  hall_id: number;
-}
-
-// PayPal Typen hinzufügen
-interface PayPalActions {
-  order: {
-    create: (data: PayPalOrderConfig) => Promise<string>;
-    capture: () => Promise<PayPalCaptureResponse>;
-  };
-}
-
-interface PayPalOrderConfig {
-  intent: string;
-  purchase_units: {
-    amount: {
-      currency_code: string;
-      value: string;
-      breakdown: {
-        item_total: {
-          currency_code: string;
-          value: string;
-        };
-        tax_total: {
-          currency_code: string;
-          value: string;
-        };
-      };
-    };
-    items: {
-      name: string;
-      quantity: string;
-      unit_amount: {
-        currency_code: string;
-        value: string;
-      };
-    }[];
-  }[];
-}
-
-interface PayPalCaptureResponse {
-  payer: Record<string, unknown>;
-  status: string;
-}
+import type {
+  Category,
+  SeatWithCategory,
+  ShowDetails,
+  PayPalActions,
+  PayPalOrderConfig,
+  PayPalCaptureResponse,
+  TransferStatus,
+  BookingDetails
+} from '@/types';
 
 export default function CheckoutPage() {
   return (
@@ -86,7 +31,6 @@ function CheckoutContent() {
   const router = useRouter();
   const params = useParams();
   
-  // Seats in useMemo einwickeln
   const seats = useMemo(() => 
     searchParams.get('seats')?.split(',').map(Number) || [],
     [searchParams]
@@ -179,7 +123,7 @@ function CheckoutContent() {
       return {
         seat_id: seatId,
         show_id: showId,
-        user_id: user?.id,
+        user_id: '2ede4bfb-87c0-4681-9a01-7f9557dd16de',//user?.id,
         payment_id: paymentId,
         token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
       };
