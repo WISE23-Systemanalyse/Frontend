@@ -49,10 +49,11 @@ export default function CreateHall() {
     variant: 'default',
     isVisible: false
   });
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<[]>([]);
 
   // Füge useEffect hinzu, um Kategorien zu laden und zu loggen
   useEffect(() => {
+    console.log(categories);
     const fetchCategories = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/categories`);
@@ -65,7 +66,7 @@ export default function CreateHall() {
     };
 
     fetchCategories();
-  }, []);
+  },);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -2,8 +2,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Show, Movie, Seat } from "@/types/index";
-import DatePicker from "@/components/movie-booking/date-picker";
-import TimePicker from "@/components/movie-booking/time-picker";
 import MovieInfo from "@/components/movie-booking/movie-info";
 import { HallLayout } from "@/components/hall/HallLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,26 +16,23 @@ export default function MovieDetail() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const showId = searchParams.get("showId");
-  const dateParam = searchParams.get("date");
-  const monthParam = searchParams.get("month");
 
   const [movie, setMovie] = useState<Movie | null>(null);
-  const [shows, setShows] = useState<Show[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
   const [error, setError] = useState<string | null>(null);
-
-  const [selectedDate, setSelectedDate] = useState(
-    dateParam ? parseInt(dateParam, 10) : new Date().getDate()
-  );
-  const [selectedMonth, setSelectedMonth] = useState(
-    monthParam || new Date().toLocaleString("de-DE", { month: "long" })
-  );
-  const [selectedShowId, setSelectedShowId] = useState<number | undefined>();
-  const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
-  const [showSeatSelection, setShowSeatSelection] = useState(false);
   const [showGroups, setShowGroups] = useState<ShowGroups>({});
-  const [showHallLayout, setShowHallLayout] = useState(false);
+
+  const [selectedDate] = useState(new Date().getDate());
+  const [selectedMonth] = useState(
+    new Date().toLocaleString("de-DE", { month: "long" })
+  );
+  
+  const [selectedShowId, setSelectedShowId] = useState<number | undefined>(
+    showId ? parseInt(showId) : undefined
+  );
+  const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
+
+  const [showHallLayout, setShowHallLayout] = useState(!!showId);
   const [show, setShow] = useState<Show | null>(null);
 
   useEffect(() => {
@@ -61,44 +56,34 @@ export default function MovieDetail() {
 
         setMovie(movieData);
 
-        // Gruppiere Shows nach Tagen
+        // Gruppierung der Shows direkt ohne Zwischenspeicherung
         const currentTime = new Date();
-        const futureShows = showsData.filter((show: Show) => 
-          new Date(show.start_time) > currentTime
-        );
+        const grouped = showsData
+          .filter((show: Show) => new Date(show.start_time) > currentTime)
+          .reduce((acc: ShowGroups, show: Show) => {
+            const showDate = new Date(show.start_time);
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            const dateKey = showDate.toDateString() === today.toDateString()
+              ? 'Heute'
+              : showDate.toDateString() === tomorrow.toDateString()
+                ? 'Morgen'
+                : showDate.toLocaleDateString('de-DE', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  });
+            
+            if (!acc[dateKey]) {
+              acc[dateKey] = [];
+            }
+            acc[dateKey].push(show);
+            return acc;
+          }, {});
 
-        const grouped = futureShows.reduce((acc: ShowGroups, show: Show) => {
-          const showDate = new Date(show.start_time);
-          const today = new Date();
-          const tomorrow = new Date(today);
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          
-          const dateKey = showDate.toDateString() === today.toDateString()
-            ? 'Heute'
-            : showDate.toDateString() === tomorrow.toDateString()
-              ? 'Morgen'
-              : showDate.toLocaleDateString('de-DE', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                });
-          
-          if (!acc[dateKey]) {
-            acc[dateKey] = [];
-          }
-          acc[dateKey].push(show);
-          return acc;
-        }, {});
-
-        // Sortiere Shows nach Startzeit
-        Object.keys(grouped).forEach(date => {
-          grouped[date].sort((a, b) => 
-            new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
-          );
-        });
-
-        setShows(showsData);
         setShowGroups(grouped);
 
         // Wenn showId vorhanden ist, lade die vollständigen Show-Details
@@ -109,6 +94,8 @@ export default function MovieDetail() {
           const showDetails = await response.json();
           console.log("Show Details:", showDetails);
           setShow(showDetails);
+          setSelectedShowId(parseInt(showId));
+          setShowHallLayout(true);
         }
 
       } catch (err) {
@@ -123,10 +110,11 @@ export default function MovieDetail() {
 
   // Hilfsfunktion für die Formatierung der Zeit
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('de-DE', {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('de-DE', {
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'UTC'
+      hour12: false
     });
   };
 
@@ -146,7 +134,10 @@ export default function MovieDetail() {
   };
 
   const handleSeatSelection = useCallback((seats: Seat[]) => {
-    setSelectedSeats(seats);
+    // Verzögere das State-Update
+    requestAnimationFrame(() => {
+      setSelectedSeats(seats);
+    });
   }, []);
 
   const handleCheckout = useCallback(async () => {
@@ -197,7 +188,6 @@ export default function MovieDetail() {
     
     if (params.get('showSeats') === 'true' && showId) {
       setSelectedShowId(parseInt(showId, 10));  // String zu Number konvertieren
-      setShowSeatSelection(true);
     }
   }, []);
 
@@ -292,7 +282,7 @@ export default function MovieDetail() {
                                 `}
                               >
                                 <div className="text-lg font-semibold">
-                                  {formatTime(show.start_time)}
+                                  {formatTime(show.start_time)} Uhr
                                 </div>
                                 <div className="text-sm mt-1 opacity-80">
                                   Saal {show.hall_name}

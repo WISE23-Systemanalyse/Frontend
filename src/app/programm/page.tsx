@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fetchShows } from './fetchdata'
 import Image from 'next/image'
 
 interface Show {
@@ -14,22 +13,12 @@ interface Show {
   description: string;
   image_url: string;
   available_seats?: number;
+  hall_name: string;
+  duration: number;
 }
 
 interface ShowGroups {
   [key: string]: Show[]
-}
-
-interface GroupedShow {
-  movie_id: number;
-  title: string;
-  image_url: string;
-  showings: {
-    id: number;
-    start_time: string;
-    hall_name: string;
-    available_seats?: number;
-  }[];
 }
 
 export default function Programm() {
@@ -40,18 +29,25 @@ export default function Programm() {
   useEffect(() => {
     const loadShows = async () => {
       try {
-        const shows = await fetchShows({}) as unknown as Show[]
+        setIsLoading(true);
+        // Fetch shows mit Details (inkl. hall_name)
+        const response = await fetch(`${process.env.BACKEND_URL}/shows/details`);
+        if (!response.ok) throw new Error('Shows konnten nicht geladen werden');
+
+        console.log('Response Body:', response);
+        
+        const shows = await response.json();
         
         // Gruppiere Shows nach Tagen
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         
         // Filtere zuerst die vergangenen Vorstellungen aus
-        const currentTime = new Date()
-        const futureShows = shows.filter(show => {
-          const showTime = new Date(show.start_time)
-          return showTime > currentTime
-        })
+        const currentTime = new Date();
+        const futureShows = shows.filter((show: Show) => {
+          const showTime = new Date(show.start_time);
+          return showTime > currentTime;
+        });
 
         const grouped = futureShows.reduce((acc: { [key: string]: Show[] }, show: Show) => {
           const showDate = new Date(show.start_time)
@@ -83,7 +79,7 @@ export default function Programm() {
 
         // Sortiere die Shows nach Startzeit innerhalb jedes Tages
         Object.keys(grouped).forEach(date => {
-          grouped[date].sort((a, b) => 
+          grouped[date].sort((a: Show, b: Show) => 
             new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
           )
         })
@@ -119,35 +115,10 @@ export default function Programm() {
     )
   }
 
-  const formatDateTime = (utcDateString: string) => {
-    const date = new Date(utcDateString);
-    return {
-      date: date.toLocaleDateString('de-DE', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }),
-      time: date.toLocaleTimeString('de-DE', { 
-        hour: '2-digit', 
-        minute: '2-digit'
-      })
-    };
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('de-DE', {
+  const formatTime = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleTimeString('de-DE', {
       hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-  };
-
-  const calculateEndTime = (startTime: string, durationMinutes: number) => {
-    const start = new Date(startTime);
-    const end = new Date(start.getTime() + durationMinutes * 60000);
-    return end.toLocaleTimeString('de-DE', { 
-      hour: '2-digit', 
       minute: '2-digit',
       hour12: false
     });
@@ -203,15 +174,8 @@ export default function Programm() {
                               <div className="flex items-center gap-6">
                                 <div className="flex items-center gap-2">
                                   <div className="text-lg font-semibold text-white">
-                                    {formatTime(showing.start_time)}
+                                    {formatTime(showing.start_time)} Uhr
                                   </div>
-                                  <div className="text-gray-400">-</div>
-                                  <div className="text-lg font-semibold text-white">
-                                    {calculateEndTime(showing.start_time, showing.duration)}
-                                  </div>
-                                </div>
-                                <div className="text-sm text-gray-400">
-                                  Saal {showing.hall_name}
                                 </div>
                               </div>
                             </div>
