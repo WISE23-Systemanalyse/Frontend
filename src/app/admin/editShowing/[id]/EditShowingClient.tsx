@@ -31,6 +31,7 @@ interface Show {
   movie_id: number
   hall_id: number
   start_time: string
+  base_price: number
 }
 
 interface MovieOption {
@@ -47,7 +48,7 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
   const [selectedHall, setSelectedHall] = useState<string>('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
-  const [price, setPrice] = useState('')
+  const [base_price, setBasePrice] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [toast, setToast] = useState<{
@@ -74,6 +75,7 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
         setHalls(hallsData);
 
         if (showData) {
+          console.log(showData);
           // Setze Film
           const currentMovie = moviesData.find((movie: { id: number }) => movie.id === showData.movie_id);
           if (currentMovie) {
@@ -97,6 +99,9 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
           const hours = String(startTime.getUTCHours()).padStart(2, '0');
           const minutes = String(startTime.getUTCMinutes()).padStart(2, '0');
           setTime(`${hours}:${minutes}`);
+
+          // Setze Basispreis
+          setBasePrice(showData.base_price.toString());
         }
       } catch (err) {
         setError('Fehler beim Laden der Daten');
@@ -138,7 +143,8 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
         show_id: parseInt(params.id),
         movie_id: parseInt(selectedMovie.value),
         hall_id: parseInt(selectedHall),
-        start_time: startTime.toISOString()
+        start_time: startTime.toISOString(),
+        base_price: parseFloat(base_price)
       };
 
       await updateShow(params.id, showData);
@@ -276,13 +282,12 @@ export default function EditShowingClient({ params }: EditShowingClientProps) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm text-gray-400">Preis (in Cent)</label>
+                <label className="text-sm text-gray-400">Basispreis (€)</label>
                 <Input
                   type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+                  value={base_price}
+                  onChange={(e) => setBasePrice(e.target.value)}
                   className="bg-[#3C3C3C] text-white border-0"
-                  placeholder="1500"
                 />
               </div>
 

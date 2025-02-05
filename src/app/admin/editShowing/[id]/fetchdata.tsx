@@ -3,6 +3,7 @@ interface ShowData {
     movie_id: number;
     hall_id: number;
     start_time: string;
+    base_price: number;
 }
 
 interface Movie {
@@ -117,7 +118,8 @@ export const updateShow = async (id: string, data: ShowData) => {
                 id: parseInt(id),
                 movie_id: data.movie_id,
                 hall_id: data.hall_id,
-                start_time: data.start_time
+                start_time: data.start_time,
+                base_price: data.base_price
             })
         });
 
