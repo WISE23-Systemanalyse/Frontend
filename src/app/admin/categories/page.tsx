@@ -21,7 +21,7 @@ const API_BASE_URL = process.env.BACKEND_URL;
 // Aktualisierte Helfer-Funktion mit den gleichen Farben wie im SeatEditor
 const getCategoryStyle = (categoryName: string) => {
   switch (categoryName.toLowerCase()) {
-    case 'standart':
+    case 'standard':
       return {
         icon: <Square size={48} className="text-emerald-500" />,
         textColor: 'text-white',
