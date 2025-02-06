@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from "next-auth/react";
 import { redirect } from 'next/navigation';
-import { ChevronLeft, Download, Calendar, Clock, CreditCard, Ticket } from 'lucide-react';
+import { ChevronLeft, Download, Calendar, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { BookingDetailsWithPayment as Booking } from '@/types/booking-details-payment';

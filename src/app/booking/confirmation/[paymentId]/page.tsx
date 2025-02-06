@@ -18,7 +18,6 @@ import '@/styles/fonts.css';  // Erstelle diese Datei für die Schriftart
 import type {
   BookingDetails,
   User,
-  TransferStatus,
   ConfirmationData,
   Friendship
 } from '@/types/index';
@@ -157,8 +156,6 @@ export default function ConfirmationPage() {
       if (selectedBooking.user_id !== currentUserId) {
         return;
       }
-
-      const originalUserId = selectedBooking.user_id;
       
       // Nur die notwendigen Felder senden
       const updatedBooking = {

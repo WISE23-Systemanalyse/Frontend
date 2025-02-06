@@ -15,7 +15,6 @@ export default function FriendsPage() {
   const router = useRouter();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Friend[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   const [showFriendModal, setShowFriendModal] = useState(false);
@@ -23,7 +22,7 @@ export default function FriendsPage() {
   const [allUsers, setAllUsers] = useState<Friend[]>([]);
   const [commonBookings, setCommonBookings] = useState<CommonBooking[]>([]);
   const [filteredFriends, setFilteredFriends] = useState<Friend[]>([]);
-  const { data: session, status } = useSession({
+  const { data: session } = useSession({
     required: true,
     onUnauthenticated() {
       redirect('/auth/signin');
@@ -120,7 +119,7 @@ export default function FriendsPage() {
 
       // Reichere die gemeinsamen Buchungen mit allen Details an
       const enrichedCommonBookings = await Promise.all(
-        commonBookings.map(async (booking: any) => {
+        commonBookings.map(async (booking: Booking) => {
           // Seat Details
           const seatResponse = await fetch(`${process.env.BACKEND_URL}/seats/${booking.seat_id}`);
           const seatData = await seatResponse.json();
@@ -293,9 +292,9 @@ export default function FriendsPage() {
             </button>
           </div>
 
-          {searchResults.length > 0 && (
+          {filteredFriends.length > 0 && (
             <div className="mt-4 space-y-2">
-              {searchResults.map((user) => (
+              {filteredFriends.map((user) => (
                 <div
                   key={user.id}
                   className="flex items-center justify-between bg-[#1C1C1C] p-3 rounded-lg"
