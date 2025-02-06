@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -35,9 +35,6 @@ export default function ConfirmationPage() {
   const [selectedBooking, setSelectedBooking] = useState<BookingDetails | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [friends, setFriends] = useState<User[]>([]);
-  const [selectedFriend, setSelectedFriend] = useState<User | null>(null);
-  const [transferStatuses, setTransferStatuses] = useState<Map<number, TransferStatus>>(new Map());
-  const [countdowns, setCountdowns] = useState<Map<number, NodeJS.Timeout>>(new Map());
 
   useEffect(() => {
     const fetchConfirmationData = async () => {
@@ -153,19 +150,11 @@ export default function ConfirmationPage() {
       const currentUserId = session?.user?.id || FALLBACK_USER_ID;
       
       if (!selectedBooking) {
-        setTransferStatuses(prev => new Map(prev).set(bookingId, {
-          message: 'Keine Buchung ausgewählt.',
-          isSuccess: false
-        }));
         return;
       }
 
       // Prüfen ob der aktuelle Benutzer der Besitzer ist
       if (selectedBooking.user_id !== currentUserId) {
-        setTransferStatuses(prev => new Map(prev).set(bookingId, {
-          message: 'Sie sind nicht berechtigt, diese Buchung zu übertragen.',
-          isSuccess: false
-        }));
         return;
       }
 
@@ -191,24 +180,8 @@ export default function ConfirmationPage() {
       );
 
       if (response.ok) {
-        setTransferStatuses(prev => new Map(prev).set(bookingId, {
-          message: 'Buchung erfolgreich übertragen!',
-          isSuccess: true,
-          countdown: 5,
-          originalUserId
-        }));
-
-        // Starte Countdown
-        const timeoutId = setTimeout(() => {
-          setTransferStatuses(prev => {
-            const newMap = new Map(prev);
-            newMap.delete(bookingId);
-            return newMap;
-          });
-        }, 5000);
-
-        setCountdowns(prev => new Map(prev).set(bookingId, timeoutId));
         setShowModal(false);
+        setSelectedBooking(null);
 
         // Update die lokalen Buchungsdaten
         if (confirmationData) {
@@ -222,10 +195,6 @@ export default function ConfirmationPage() {
       }
     } catch (error) {
       console.error('Transfer error:', error);
-      setTransferStatuses(prev => new Map(prev).set(bookingId, {
-        message: 'Fehler beim Übertragen der Buchung.',
-        isSuccess: false
-      }));
     }
   };
 
@@ -313,45 +282,6 @@ export default function ConfirmationPage() {
 
   // Modal Component
   const TicketModal = ({ booking, onClose }: { booking: BookingDetails; onClose: () => void }) => {
-    const [showFriendsList, setShowFriendsList] = useState(false);
-    const [friends, setFriends] = useState<User[]>([]);
-    const [isLoadingFriends, setIsLoadingFriends] = useState(false);
-
-    // Lade Freunde wenn der Transfer-Button geklickt wird
-    const loadFriends = async () => {
-      setIsLoadingFriends(true);
-      try {
-        const currentUserId = session?.user?.id || FALLBACK_USER_ID;
-        const response = await fetch(
-          `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/friendships/user/${currentUserId}`
-        );
-        const friendships: Friendship[] = await response.json();
-
-        // Lade Details für jeden Freund
-        const friendsData = await Promise.all(
-          friendships.map(async (friendship) => {
-            const friendId = friendship.user1Id === currentUserId ? friendship.user2Id : friendship.user1Id;
-            const userResponse = await fetch(
-              `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/users/${friendId}`
-            );
-            return await userResponse.json();
-          })
-        );
-
-        setFriends(friendsData);
-      } catch (error) {
-        console.error('Fehler beim Laden der Freunde:', error);
-      } finally {
-        setIsLoadingFriends(false);
-      }
-    };
-
-    // Zusätzliche Sicherheitsprüfung
-    if (isBookingTransferred(booking)) {
-      onClose();
-      return null;
-    }
-
     return (
       <>
         <div 
@@ -375,99 +305,52 @@ export default function ConfirmationPage() {
               </button>
             </div>
 
-            {!showFriendsList ? (
-              // Normales Ticket-Modal
-              <>
-                <div className="mb-6 space-y-2 text-gray-300">
-                  <p>Film: <span className="text-white">{booking.show?.movie?.title}</span></p>
-                  <p>Sitzplatz: <span className="text-white">Reihe {booking.seat?.row_number}, Platz {booking.seat?.seat_number}</span></p>
-                  <p>Kategorie: <span className="text-white">{booking.seat?.category?.category_name}</span></p>
-                </div>
+            <div className="mb-6 space-y-2 text-gray-300">
+              <p>Film: <span className="text-white">{booking.show?.movie?.title}</span></p>
+              <p>Sitzplatz: <span className="text-white">Reihe {booking.seat?.row_number}, Platz {booking.seat?.seat_number}</span></p>
+              <p>Kategorie: <span className="text-white">{booking.seat?.category?.category_name}</span></p>
+            </div>
 
-                <div className="bg-white p-6 rounded-lg mb-6">
-                  <div className="flex justify-center">
-                    <QRCode
-                      id={`qr-code-preview-${booking.id}`}
-                      value={JSON.stringify({
-                        booking_id: booking.id,
-                        token: booking.token
-                      })}
-                      size={200}
-                      level="H"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <button
-                    onClick={() => createQRCodeWithInfo(booking)}
-                    className="w-full py-3 bg-red-600 text-white rounded-lg 
-                             hover:bg-red-700 transition-all duration-200 
-                             flex items-center justify-center gap-2"
-                  >
-                    <Download className="w-5 h-5" />
-                    Ticket herunterladen
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      loadFriends();
-                      setShowFriendsList(true);
-                    }}
-                    className="w-full py-3 bg-blue-600 text-white rounded-lg 
-                             hover:bg-blue-700 transition-all duration-200 
-                             flex items-center justify-center gap-2"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m-8 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                    Ticket übertragen
-                  </button>
-                </div>
-              </>
-            ) : (
-              // Freundesliste für Transfer
-              <div className="space-y-4">
-                <h4 className="text-lg font-medium text-white mb-4">Wähle einen Freund aus</h4>
-                
-                {isLoadingFriends ? (
-                  <div className="text-center text-gray-400 py-4">
-                    Lade Freunde...
-                  </div>
-                ) : friends.length === 0 ? (
-                  <div className="text-center text-gray-400 py-4">
-                    Keine Freunde gefunden
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                    {friends.map((friend) => (
-                      <button
-                        key={friend.id}
-                        onClick={() => {
-                          transferBooking(booking.id, friend.id);
-                          onClose();
-                        }}
-                        className="w-full p-4 bg-[#3C3C3C] rounded-lg hover:bg-[#4C4C4C] 
-                                 transition-colors text-left flex items-center justify-between"
-                      >
-                        <span className="text-white">{friend.firstName} {friend.lastName}</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <button
-                  onClick={() => setShowFriendsList(false)}
-                  className="w-full py-3 bg-gray-600 text-white rounded-lg 
-                           hover:bg-gray-700 transition-all duration-200 mt-4"
-                >
-                  Zurück
-                </button>
+            <div className="bg-white p-6 rounded-lg mb-6">
+              <div className="flex justify-center">
+                <QRCode
+                  id={`qr-code-preview-${booking.id}`}
+                  value={JSON.stringify({
+                    booking_id: booking.id,
+                    token: booking.token
+                  })}
+                  size={200}
+                  level="H"
+                />
               </div>
-            )}
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => createQRCodeWithInfo(booking)}
+                className="w-full py-3 bg-red-600 text-white rounded-lg 
+                         hover:bg-red-700 transition-all duration-200 
+                         flex items-center justify-center gap-2"
+              >
+                <Download className="w-5 h-5" />
+                Ticket herunterladen
+              </button>
+
+              <button
+                onClick={() => {
+                  transferBooking(booking.id, booking.user_id);
+                  onClose();
+                }}
+                className="w-full py-3 bg-blue-600 text-white rounded-lg 
+                         hover:bg-blue-700 transition-all duration-200 
+                         flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m-8 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                Ticket übertragen
+              </button>
+            </div>
           </div>
         </div>
       </>
@@ -576,11 +459,6 @@ export default function ConfirmationPage() {
     // QR Code mit JSON-Objekt
     const svgElement = document.getElementById(`qr-code-preview-${booking.id}`);
     if (svgElement instanceof SVGElement) {
-      const qrData = JSON.stringify({
-        booking_id: booking.id,
-        token: booking.token
-      });
-      
       const svgData = new XMLSerializer().serializeToString(svgElement);
       const img = new Image();
       img.onload = () => {

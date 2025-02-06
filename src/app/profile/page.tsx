@@ -6,6 +6,7 @@ import { User } from '@/types/user';
 import { Ticket, Users2, ArrowRight } from 'lucide-react';
 import { Card } from "@/components/ui/card";
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const API_BASE_URL = process.env.BACKEND_URL;
 
@@ -115,10 +116,12 @@ const ProfilePage = () => {
 
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <img
+                <Image
                   src={imageUrl || userData?.imageUrl || DEFAULT_PROFILE_IMAGE}
                   alt="Profilbild"
-                  className="w-32 h-32 rounded-full object-cover"
+                  width={128}
+                  height={128}
+                  className="rounded-full object-cover"
                 />
                 {isEditing && (
                   <input

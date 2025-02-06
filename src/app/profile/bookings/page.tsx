@@ -16,7 +16,7 @@ export default function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { data: session, status } = useSession({
+  const { data: session } = useSession({
     required: true,
     onUnauthenticated() {
       redirect('/auth/signin');
@@ -35,7 +35,7 @@ export default function BookingsPage() {
 
         // 2. Für jede Buchung: Details laden
         const enrichedBookings = await Promise.all(
-          bookingsData.map(async (booking: any) => {
+          bookingsData.map(async (booking: Booking) => {
             // Seat Details
             const seatResponse = await fetch(`${API_BASE_URL}/seats/${booking.seat_id}`);
             const seatData = await seatResponse.json();

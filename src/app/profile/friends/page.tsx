@@ -5,33 +5,11 @@ import { useSession } from "next-auth/react";
 import { redirect } from 'next/navigation';
 import { ChevronLeft, UserPlus, Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Friend } from '@/types/friend';
+import { CommonBooking } from '@/types/common-booking';
+import { Friendship } from '@/types/friendship';
+import { BookingDetails as Booking } from '@/types/booking-details';
 
-interface Friend {
-  id: number;
-  userName: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string;
-}
-
-interface CommonBooking {
-  id: number;
-  show_id: number;
-  show: {
-    id: number;
-    movie: {
-      title: string;
-    };
-    start_time: string;
-  };
-  seat: {
-    row_number: number;
-    seat_number: number;
-    category: {
-      category_name: string;
-    };
-  };
-}
 
 export default function FriendsPage() {
   const router = useRouter();
@@ -63,7 +41,7 @@ export default function FriendsPage() {
         const friendships = await response.json();
 
         // 2. Extrahiere die Freundes-IDs
-        const friendIds = friendships.map((friendship: any) => 
+        const friendIds = friendships.map((friendship: Friendship) => 
           friendship.user1Id === session.user.id ? friendship.user2Id : friendship.user1Id
         );
 
@@ -131,13 +109,13 @@ export default function FriendsPage() {
       ]);
 
       // Finde gemeinsame Shows (nur einmal pro Show)
-      const userShowIds = new Set(userBookings.map((booking: any) => booking.show_id));
-      const friendShowIds = new Set(friendBookings.map((booking: any) => booking.show_id));
+      const userShowIds = new Set(userBookings.map((booking: Booking) => booking.show_id));
+      const friendShowIds = new Set(friendBookings.map((booking: Booking) => booking.show_id));
       const commonShowIds = [...userShowIds].filter(id => friendShowIds.has(id));
 
       // Nimm die erste Buchung für jede gemeinsame Show
       const commonBookings = commonShowIds.map(showId => 
-        userBookings.find((booking: any) => booking.show_id === showId)
+        userBookings.find((booking: Booking) => booking.show_id === showId)
       );
 
       // Reichere die gemeinsamen Buchungen mit allen Details an
@@ -207,7 +185,7 @@ export default function FriendsPage() {
       const response = await fetch(`${process.env.BACKEND_URL}/friendships/user/${session.user.id}`);
       const friendships = await response.json();
       
-      const friendship = friendships.find((f: any) => 
+      const friendship = friendships.find((f: Friendship) => 
         (f.user1Id === session.user.id && f.user2Id === friendId.toString()) || 
         (f.user2Id === session.user.id && f.user1Id === friendId.toString())
       );

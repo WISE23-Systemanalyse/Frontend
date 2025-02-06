@@ -85,7 +85,7 @@ export function HallLayout({ show, onSeatSelectAction }: HallLayoutProps) {
         clearInterval(intervalId);
       };
     }
-  }, [show?.show_id]); // Abhängigkeit von show.id
+  }, [show?.show_id, fetchSeats]); // fetchSeats als Abhängigkeit hinzugefügt
 
   // Fetch categories
   useEffect(() => {

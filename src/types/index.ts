@@ -11,3 +11,4 @@ export * from './transfer-status';
 export * from './booking-details';
 export * from './confirmation-data';
 export * from './friendship';
+export * from './common-booking';
