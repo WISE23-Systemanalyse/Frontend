@@ -43,17 +43,85 @@ Bauen Sie die Anwendung für die Produktion:
 
 npm run build
 
-## Features
+## Features & Anleitungen
 
+### Für Kinobesucher
+#### 🎫 So buchen Sie Ihre Kinotickets
+1. **Film und Vorstellung auswählen**
+   über /movies
+   - hier sind Filme aufgelistet
+   - iese sind über das genre sortiert
+   - wähle einen Film aus
+   - hier werden alle Vorstellungen des gewählten Films aufgelistet
+   - wähle eine Vorstellung aus
 
-## Features
+   über /programm
+   - 
 
-- 🎫 Kinoprogramm-Verwaltung
-- 🎬 Film-Management
-- 👥 Benutzerverwaltung
-- 🏛️ Saalverwaltung
-- 📅 Vorstellungsplanung
-- 🎯 Sitzplatzreservierung
+2. **Vorstellung wählen**
+   - Wählen Sie Ihr gewünschtes Datum
+   - Wählen Sie die passende Vorstellungszeit
+   - Sehen Sie direkt Verfügbarkeit und Preise
+
+3. **Sitzplätze auswählen**
+   - Wählen Sie aus verschiedenen Kategorien:
+     * Standard-Sitze für besten Preis
+     * Premium-Sitze für mehr Komfort
+     * VIP-Sitze für das beste Erlebnis
+   - Sehen Sie die Verfügbarkeit in Echtzeit
+   - Wählen Sie einen oder mehrere Plätze
+
+4. **Bezahlung**
+   - Sichere Bezahlung via PayPal
+   - Sofortige Buchungsbestätigung
+   - Tickets per E-Mail
+
+#### 👤 Ihr Benutzerkonto verwalten
+1. **Registrierung & Login**
+   - Einfache Registrierung mit E-Mail
+   - Schneller Login
+   - Passwort vergessen? Nutzen Sie die Reset-Funktion
+
+2. **Ihre Buchungen**
+   - Sehen Sie alle Ihre Buchungen
+   - Verwalten Sie Ihre Tickets
+   - Prüfen Sie Ihre Buchungshistorie
+
+### Für Kinobetreiber (Admin)
+#### 🎬 Filmverwaltung
+1. **Filme verwalten**
+   - Neue Filme hinzufügen
+   - Filminformationen aktualisieren
+   - FSK und Genres festlegen
+   - Filmbilder hochladen
+
+#### 📅 Vorstellungen planen
+1. **Spielplan erstellen**
+   - Vorstellungen für Filme anlegen
+   - Säle zuweisen
+   - Preise festlegen
+   - Sondervorstellungen markieren
+
+#### 🏛️ Säle einrichten
+1. **Saalverwaltung**
+   - Neue Säle anlegen
+   - Sitzplan gestalten
+   - Preiskategorien zuweisen
+   - Bereiche definieren
+
+#### 👥 Benutzerverwaltung
+1. **Benutzer verwalten**
+   - Kundenkonten überblicken
+   - Berechtigungen vergeben
+   - Buchungen einsehen
+   - Support leisten
+
+#### 📊 System konfigurieren
+1. **Grundeinstellungen**
+   - Basispreise festlegen
+   - Kategorieaufschläge anpassen
+   - E-Mail-Vorlagen gestalten
+   - System-Updates durchführen
 
 ## Technologie-Stack
 
