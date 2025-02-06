@@ -1,5 +1,7 @@
 export interface Category {
   id: number;
-  category_name: string;
+  name: string;
+  price: number;
   surcharge: number;
+  [key: string]: string | number;
 } 
