@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+/* Fallback-Fonts definieren */
+@font-face {
+  font-family: 'Montserrat';
+  src: local('Montserrat'),
+       url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+  font-display: swap;
+}
+
+/* Optional: Preload für bessere Performance */
+@media screen {
+  @font-face {
+    font-family: 'Montserrat';
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+    src: local('Montserrat Regular'),
+         url('https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXp-p7K4KLg.woff2') format('woff2');
+  }
+} 
