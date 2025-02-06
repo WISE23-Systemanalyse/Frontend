@@ -1,4 +1,5 @@
 export interface User {
+    isAdmin: any
     id: string
     email: string
     userName: string
