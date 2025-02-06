@@ -621,28 +621,28 @@ export default function ConfirmationPage() {
             onClick={() => setShowModal(false)}
           >
             <div 
-              className="bg-[#2C2C2C] rounded-xl p-8 shadow-xl max-w-3xl w-full space-y-6"
+              className="bg-[#2C2C2C] rounded-xl p-3 shadow-xl max-w-md w-full space-y-2"
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-white">Ticket</h3>
+              <div className="flex justify-between items-center mb-1">
+                <h3 className="text-base font-bold text-white">Ticket</h3>
                 <button
                   onClick={() => setShowModal(false)}
                   className="text-gray-400 hover:text-white transition-colors"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
               {/* Ticket Preview */}
-              <div className="bg-[#1C1C1C] rounded-xl overflow-hidden">
+              <div className="bg-[#1C1C1C] rounded-lg overflow-hidden">
                 <TicketPreview booking={selectedBooking} />
               </div>
 
               {/* Download Button */}
-              <div className="flex justify-center pt-4">
+              <div className="flex justify-center pt-1">
                 <button
                   onClick={() => {
                     const svg = document.getElementById(`qr-code-preview-${selectedBooking.id}`);
@@ -650,10 +650,10 @@ export default function ConfirmationPage() {
                       createQRCodeWithInfo(selectedBooking);
                     }
                   }}
-                  className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg 
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg 
                            hover:bg-red-700 transition-all duration-200 font-medium"
                 >
-                  <Download className="w-5 h-5" />
+                  <Download className="w-3.5 h-3.5" />
                   Ticket herunterladen
                 </button>
               </div>
