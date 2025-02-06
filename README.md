@@ -53,61 +53,57 @@ npm run build
    - iese sind über das genre sortiert
    - wähle einen Film aus
    - hier werden alle Vorstellungen des gewählten Films aufgelistet
-   - wähle eine Vorstellung aus
+   - wähle eine Vorstellung aus der Liste aus
 
    über /programm
-   - 
-
-2. **Vorstellung wählen**
-   - Wählen Sie Ihr gewünschtes Datum
-   - Wählen Sie die passende Vorstellungszeit
-   - Sehen Sie direkt Verfügbarkeit und Preise
+   - hier werden alle Vorstellungen für das Kino angezeigt
+   - über Tickets buchen kannst du zu einer bestimmten Vorstellung gehen
 
 3. **Sitzplätze auswählen**
-   - Wählen Sie aus verschiedenen Kategorien:
+   - Wählen hier aus verschiedenen Kategorien:
      * Standard-Sitze für besten Preis
      * Premium-Sitze für mehr Komfort
      * VIP-Sitze für das beste Erlebnis
-   - Sehen Sie die Verfügbarkeit in Echtzeit
-   - Wählen Sie einen oder mehrere Plätze
+   - zum Auswählen eines Sitzes diesen einfach anwählen
+   - wenn du alle Sitze ausgewählt hast kannst du auf Plätze buchen klicken
 
 4. **Bezahlung**
-   - Sichere Bezahlung via PayPal
-   - Sofortige Buchungsbestätigung
-   - Tickets per E-Mail
+   - bei uns kann man über PayPal bezahlen
+   - dazu braucht man folgende Sandbox daten:
+     * email: sb-zcp7v36903022@personal.example.com
+     * password: SO|Of45%
+   - nach der Bazahlung wird man zur Buchungsbestätigung weitergeleitet
 
-#### 👤 Ihr Benutzerkonto verwalten
+   **Buchungsbestätigung**
+   - hier wird werden alle details über die Buchung angezeigt
+   - wenn mann die Tickets anwählt, kann man diese herunterladen oder Freunden zuweisen (dazu muss man angemeldet sein)
+
+#### 👤 Benutzerkonto verwalten
 1. **Registrierung & Login**
-   - Einfache Registrierung mit E-Mail
-   - Schneller Login
-   - Passwort vergessen? Nutzen Sie die Reset-Funktion
+   - oben rechts gibt es ein Anmelden Icon
+   - hier kann man sich registrieren oder einloggen
+   - wenn man sich registriert benötigt man noch eine Bestätigungsmail
 
-2. **Ihre Buchungen**
-   - Sehen Sie alle Ihre Buchungen
-   - Verwalten Sie Ihre Tickets
-   - Prüfen Sie Ihre Buchungshistorie
+2. **Ihre Profil**
+   - hier kann man alle Buchungen einsehen
+   - Freunde einsehen und neue Freunde hinzufügen
+   - Profilinformationen bearbeiten
 
 ### Für Kinobetreiber (Admin)
 #### 🎬 Filmverwaltung
-1. **Filme verwalten**
+diese findet man und /admin
+**Filme verwalten**
    - Neue Filme hinzufügen
    - Filminformationen aktualisieren
-   - FSK und Genres festlegen
-   - Filmbilder hochladen
 
-#### 📅 Vorstellungen planen
-1. **Spielplan erstellen**
-   - Vorstellungen für Filme anlegen
-   - Säle zuweisen
-   - Preise festlegen
-   - Sondervorstellungen markieren
-
-#### 🏛️ Säle einrichten
-1. **Saalverwaltung**
+**Saalverwaltung**
    - Neue Säle anlegen
-   - Sitzplan gestalten
-   - Preiskategorien zuweisen
-   - Bereiche definieren
+   - mit + und - können die Reihen oder Spalten angepasst werden
+   - durch klicken oder zeihen über die Sitze kann man diese vom Typ verändern (je nachdem, welche Typ oben ausgewählt ist Standard, Premium oder VIP oder kein Sitz für Gänge)
+
+**Kategorien verwalten**
+   - die Kategorien sind immer Fest
+   - dort kann man den aufpreis für die jeweilige Kategorie anpassen
 
 #### 👥 Benutzerverwaltung
 1. **Benutzer verwalten**
