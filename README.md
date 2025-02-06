@@ -43,17 +43,81 @@ Bauen Sie die Anwendung für die Produktion:
 
 npm run build
 
-## Features
+## Features & Anleitungen
 
+### Für Kinobesucher
+#### 🎫 So buchen Sie Ihre Kinotickets
+1. **Film und Vorstellung auswählen**
+   über /movies
+   - hier sind Filme aufgelistet
+   - iese sind über das genre sortiert
+   - wähle einen Film aus
+   - hier werden alle Vorstellungen des gewählten Films aufgelistet
+   - wähle eine Vorstellung aus der Liste aus
 
-## Features
+   über /programm
+   - hier werden alle Vorstellungen für das Kino angezeigt
+   - über Tickets buchen kannst du zu einer bestimmten Vorstellung gehen
 
-- 🎫 Kinoprogramm-Verwaltung
-- 🎬 Film-Management
-- 👥 Benutzerverwaltung
-- 🏛️ Saalverwaltung
-- 📅 Vorstellungsplanung
-- 🎯 Sitzplatzreservierung
+3. **Sitzplätze auswählen**
+   - Wählen hier aus verschiedenen Kategorien:
+     * Standard-Sitze für besten Preis
+     * Premium-Sitze für mehr Komfort
+     * VIP-Sitze für das beste Erlebnis
+   - zum Auswählen eines Sitzes diesen einfach anwählen
+   - wenn du alle Sitze ausgewählt hast kannst du auf Plätze buchen klicken
+
+4. **Bezahlung**
+   - bei uns kann man über PayPal bezahlen
+   - dazu braucht man folgende Sandbox daten:
+     * email: sb-zcp7v36903022@personal.example.com
+     * password: SO|Of45%
+   - nach der Bazahlung wird man zur Buchungsbestätigung weitergeleitet
+
+   **Buchungsbestätigung**
+   - hier wird werden alle details über die Buchung angezeigt
+   - wenn mann die Tickets anwählt, kann man diese herunterladen oder Freunden zuweisen (dazu muss man angemeldet sein)
+
+#### 👤 Benutzerkonto verwalten
+1. **Registrierung & Login**
+   - oben rechts gibt es ein Anmelden Icon
+   - hier kann man sich registrieren oder einloggen
+   - wenn man sich registriert benötigt man noch eine Bestätigungsmail
+
+2. **Ihre Profil**
+   - hier kann man alle Buchungen einsehen
+   - Freunde einsehen und neue Freunde hinzufügen
+   - Profilinformationen bearbeiten
+
+### Für Kinobetreiber (Admin)
+#### 🎬 Filmverwaltung
+diese findet man und /admin
+**Filme verwalten**
+   - Neue Filme hinzufügen
+   - Filminformationen aktualisieren
+
+**Saalverwaltung**
+   - Neue Säle anlegen
+   - mit + und - können die Reihen oder Spalten angepasst werden
+   - durch klicken oder zeihen über die Sitze kann man diese vom Typ verändern (je nachdem, welche Typ oben ausgewählt ist Standard, Premium oder VIP oder kein Sitz für Gänge)
+
+**Kategorien verwalten**
+   - die Kategorien sind immer Fest
+   - dort kann man den aufpreis für die jeweilige Kategorie anpassen
+
+#### 👥 Benutzerverwaltung
+1. **Benutzer verwalten**
+   - Kundenkonten überblicken
+   - Berechtigungen vergeben
+   - Buchungen einsehen
+   - Support leisten
+
+#### 📊 System konfigurieren
+1. **Grundeinstellungen**
+   - Basispreise festlegen
+   - Kategorieaufschläge anpassen
+   - E-Mail-Vorlagen gestalten
+   - System-Updates durchführen
 
 ## Technologie-Stack
 
