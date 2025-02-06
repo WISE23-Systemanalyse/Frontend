@@ -6,6 +6,7 @@ import { Search, UserCog, Trash2 } from "lucide-react"
 import { fetchUsers, deleteUser } from './fetchdata'
 import Image from 'next/image'
 import { Modal } from "@/components/ui/modal"
+import { Toast } from "@/components/ui/toast"
 
 interface User {
   id: number
@@ -27,6 +28,15 @@ export default function AdminUsers() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [toastConfig, setToastConfig] = useState<{
+    message: string;
+    isVisible: boolean;
+    variant?: 'success' | 'error' | 'default';
+  }>({
+    message: '',
+    isVisible: false,
+    variant: 'default'
+  });
 
   // Fetch users
   useEffect(() => {
@@ -60,8 +70,23 @@ export default function AdminUsers() {
       await deleteUser(userId)
       setUsers(users.filter(user => user.id !== userId))
       setFilteredUsers(filteredUsers.filter(user => user.id !== userId))
+      setSelectedUser(null)
+      
+      // Erfolgs-Toast anzeigen
+      setToastConfig({
+        message: 'Benutzer wurde erfolgreich gelöscht',
+        isVisible: true,
+        variant: 'success'
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten')
+      
+      // Fehler-Toast anzeigen
+      setToastConfig({
+        message: 'Fehler beim Löschen des Benutzers',
+        isVisible: true,
+        variant: 'error'
+      });
     }
   }
 
@@ -270,6 +295,13 @@ export default function AdminUsers() {
           <UserDetailsModal user={selectedUser} />
         </Modal>
       )}
+
+      <Toast 
+        message={toastConfig.message}
+        isVisible={toastConfig.isVisible}
+        variant={toastConfig.variant}
+        onClose={() => setToastConfig(prev => ({ ...prev, isVisible: false }))}
+      />
     </div>
   )
 }

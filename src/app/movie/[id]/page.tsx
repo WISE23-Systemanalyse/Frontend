@@ -42,7 +42,7 @@ export default function MovieDetail() {
         setError(null);
 
         const [movieResponse, showsResponse] = await Promise.all([
-          fetch(`${process.env.BACKEND_URL}/movies/${params.id}`),
+          fetch(`${process.env.BACKEND_URL}/movies/${params.id}/?showId=${showId}`),
           fetch(`${process.env.BACKEND_URL}/movies/${params.id}/shows`)
         ]);
 
@@ -85,7 +85,7 @@ export default function MovieDetail() {
           }, {});
 
         setShowGroups(grouped);
-
+          console.log("showId: " + showId);
         // Wenn showId vorhanden ist, lade die vollständigen Show-Details
         if (showId) {
           const response = await fetch(`${process.env.BACKEND_URL}/shows/${showId}`);
@@ -128,6 +128,10 @@ export default function MovieDetail() {
       console.log("Show Details:", showDetails);
       setShow(showDetails);
       setShowHallLayout(true);
+      
+      // Aktualisiere die URL mit der ausgewählten Show-ID
+      router.push(`/movie/${params.id}?showId=${show.show_id}`, { scroll: false });
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ein Fehler ist aufgetreten");
     }
