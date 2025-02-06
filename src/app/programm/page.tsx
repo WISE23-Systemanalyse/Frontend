@@ -34,7 +34,7 @@ export default function Programm() {
         console.log('Fetching shows...');
         
         // Absolute URL verwenden
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/shows/details`, {
+        const response = await fetch(`${process.env.BACKEND_URL}/shows/details`, {
           headers: {
             'Accept': 'application/json'
           }
