@@ -18,8 +18,7 @@ import '@/styles/fonts.css';  // Erstelle diese Datei für die Schriftart
 import type {
   BookingDetails,
   User,
-  ConfirmationData,
-  Friendship
+  ConfirmationData
 } from '@/types/index';
 
 const FALLBACK_USER_ID = '2ede4bfb-87c0-4681-9a01-7f9557dd16de';
@@ -127,7 +126,13 @@ export default function ConfirmationPage() {
       const friendshipsResponse = await fetch(
         `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/friendships/user/${userId}`
       );
-      const friendships: Friendship[] = await friendshipsResponse.json();
+      const friendships = await friendshipsResponse.json();
+      
+      // Prüfe ob friendships ein Array ist
+      if (!Array.isArray(friendships)) {
+        setFriends([]);
+        return;
+      }
 
       const friendsData = await Promise.all(
         friendships.map(async (friendship) => {
@@ -142,6 +147,7 @@ export default function ConfirmationPage() {
       setFriends(friendsData);
     } catch (error) {
       console.error('Fehler beim Laden der Freunde:', error);
+      setFriends([]); // Setze leeres Array im Fehlerfall
     }
   };
 
