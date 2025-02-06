@@ -24,6 +24,13 @@ interface NewSeat {
   category_id: number;
 }
 
+interface Category {
+  id: number;
+  name: string;
+  price_modifier: number;
+  description?: string;
+}
+
 const API_BASE_URL = process.env.BACKEND_URL;
 
 // Initialisiere 5 Reihen mit je 10 Sitzen mit der Standard-Kategorie (ID 1)
@@ -49,8 +56,8 @@ export default function CreateHall() {
     variant: 'default',
     isVisible: false
   });
-  const [categories, setCategories] = useState<any[]>([]);
-
+  const [categories, setCategories] = useState<Category[]>([]);
+ console.log(categories);
   // Füge useEffect hinzu, um Kategorien zu laden und zu loggen
   useEffect(() => {
     const fetchCategories = async () => {
