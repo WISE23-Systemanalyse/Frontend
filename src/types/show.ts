@@ -4,6 +4,7 @@ export type Show = {
   hall_id: number
   hall_name: string
   start_time: string
+  base_price: number
 }
 
 export interface TimeSlot {

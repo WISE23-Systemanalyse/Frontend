@@ -25,9 +25,9 @@ export function HallLayout({ show, onSeatSelectAction }: HallLayoutProps) {
       setIsLoading(true);
       setError(null);
       
-      console.log("Fetching seats for show:", show.id);
+      console.log("Fetching seats for show:", show.show_id);
       const response = await fetch(
-        `${process.env.BACKEND_URL}/shows/${show.id}/seats`
+        `${process.env.BACKEND_URL}/shows/${show.show_id}/seats`
       );
 
       if (!response.ok) {
@@ -75,7 +75,7 @@ export function HallLayout({ show, onSeatSelectAction }: HallLayoutProps) {
 
   // Fetch seats effect
   useEffect(() => {
-    if (show?.id) {  // Nur ausführen wenn show.id existiert
+    if (show?.show_id) {  // Nur ausführen wenn show.id existiert
       fetchSeats();
       
       // Polling alle 30 Sekunden für Aktualisierungen
@@ -85,7 +85,7 @@ export function HallLayout({ show, onSeatSelectAction }: HallLayoutProps) {
         clearInterval(intervalId);
       };
     }
-  }, [show?.id]); // Abhängigkeit von show.id
+  }, [show?.show_id]); // Abhängigkeit von show.id
 
   // Fetch categories
   useEffect(() => {
