@@ -11,36 +11,14 @@ const footerLinks = [
     title: 'Unternehmen', 
     links: [
       { name: 'Über uns', href: '/about' },
-      { name: 'Karriere', href: '#' },
       { name: 'Kontakt', href: '/contact' },
       { name: 'Impressum', href: '/impressum' },
     ] 
   },
   { 
-    title: 'Filme', 
+    title: 'Rechtliches', 
     links: [
-      { name: 'Aktuell', href: '#' },
-      { name: 'Demnächst', href: '#' },
-      { name: 'Trailer', href: '#' },
-      { name: 'Genres', href: '#' },
-    ]
-  },
-  { 
-    title: 'Service', 
-    links: [
-      { name: 'Gutscheine', href: '#' },
-      { name: 'Mobile App', href: '#' },
-      { name: 'Firmenevents', href: '#' },
-      { name: 'Werbung', href: '#' },
-    ]
-  },
-  { 
-    title: 'Hilfe', 
-    links: [
-      { name: 'FAQ', href: '#' },
       { name: 'AGB', href: '/agb' },
-      { name: 'Datenschutz', href: '#' },
-      { name: 'Barrierefreiheit', href: '#' },
     ]
   },
 ]
@@ -125,48 +103,25 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
         <div className="xl:grid xl:grid-cols-3 xl:gap-8">
           <div className="grid grid-cols-2 gap-8 xl:col-span-2">
-            <div className="md:grid md:grid-cols-2 md:gap-8">
-              {footerLinks.slice(0, 2).map((column) => (
-                <div key={column.title}>
-                  <h3 className="text-sm font-semibold text-red-500 tracking-wider uppercase">
-                    {column.title}
-                  </h3>
-                  <ul role="list" className="mt-4 space-y-4">
-                    {column.links.map((link) => (
-                      <li key={link.name}>
-                        <Link 
-                          href={link.href} 
-                          className="text-base text-white hover:text-red-500 transition-colors duration-200"
-                        >
-                          {link.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-            <div className="md:grid md:grid-cols-2 md:gap-8">
-              {footerLinks.slice(2).map((column) => (
-                <div key={column.title}>
-                  <h3 className="text-sm font-semibold text-red-500 tracking-wider uppercase">
-                    {column.title}
-                  </h3>
-                  <ul role="list" className="mt-4 space-y-4">
-                    {column.links.map((link) => (
-                      <li key={link.name}>
-                        <Link 
-                          href={link.href} 
-                          className="text-base text-white hover:text-red-500 transition-colors duration-200"
-                        >
-                          {link.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+            {footerLinks.map((column) => (
+              <div key={column.title}>
+                <h3 className="text-sm font-semibold text-red-500 tracking-wider uppercase">
+                  {column.title}
+                </h3>
+                <ul role="list" className="mt-4 space-y-4">
+                  {column.links.map((link) => (
+                    <li key={link.name}>
+                      <Link 
+                        href={link.href} 
+                        className="text-base text-white hover:text-red-500 transition-colors duration-200"
+                      >
+                        {link.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
           <div className="mt-8 xl:mt-0">
             <h3 className="text-sm font-semibold text-red-500 tracking-wider uppercase">

@@ -68,12 +68,22 @@ export function MovieBookingLayout({
     if (selectedShowId) {
       const fetchShow = async () => {
         const response = await fetch(`${process.env.BACKEND_URL}/shows/${selectedShowId}`);
-        const show = await response.json();
-        setSelectedShow(show);
+        if (!response.ok) return;
+        const showData = await response.json();
+        setSelectedShow(showData);
       };
       fetchShow();
     }
   }, [selectedShowId]);
+
+  const handleShowSelection = (show: Show) => {
+    const newUrl = `/movie/${movie.id}?showId=${show.show_id}`;
+    window.history.pushState({}, '', newUrl);
+    
+    onShowSelect(show);
+    setSelectedShow(show);
+    setShowHallLayout(true);
+  };
 
   return (
     <div className="min-h-screen bg-[#141414] p-4">
@@ -129,10 +139,7 @@ export function MovieBookingLayout({
                               {dayShows.map((show) => (
                                 <button
                                   key={show.show_id}
-                                  onClick={() => {
-                                    onShowSelect(show);
-                                    setShowHallLayout(true);
-                                  }}
+                                  onClick={() => handleShowSelection(show)}
                                   className="group flex flex-col items-center p-4 rounded-lg transition-all 
                                            bg-neutral-800/50 hover:bg-neutral-700/50 
                                            min-w-[120px] border border-red-500/10
@@ -180,7 +187,7 @@ export function MovieBookingLayout({
                         {show && `${formatDateTime(show.start_time).date} um ${formatDateTime(show.start_time).time} Uhr • Saal ${show.hall_name}`}
                       </div>
                       <HallLayout
-                        show={selectedShow!}
+                        show={selectedShow || show!}
                         onSeatSelectAction={onSeatSelect}
                       />
                     </div>

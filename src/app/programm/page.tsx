@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 interface Show {
   id: number;
@@ -25,6 +25,7 @@ export default function Programm() {
   const [showGroups, setShowGroups] = useState<ShowGroups>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const loadShows = async () => {
@@ -94,6 +95,10 @@ export default function Programm() {
 
     loadShows()
   }, [])
+
+  const handleShowClick = (showing: Show) => {
+    router.push(`/movie/${showing.movie_id}?showId=${showing.id}`);
+  };
 
   if (isLoading) {
     return (
@@ -181,14 +186,14 @@ export default function Programm() {
                             </div>
 
                             <div className="flex justify-end mt-4">
-                              <Link
-                                href={`/movie/${showing.movie_id}?showId=${showing.id}`}
+                              <button
+                                onClick={() => handleShowClick(showing)}
                                 className="bg-red-600 hover:bg-red-700 text-white 
                                          px-6 py-2 rounded-lg transition-all duration-200 
                                          hover:scale-105 text-sm font-medium"
                               >
                                 Tickets buchen
-                              </Link>
+                              </button>
                             </div>
                           </div>
                         </div>

@@ -25,17 +25,10 @@ export function HallLayout({ show, onSeatSelectAction }: HallLayoutProps) {
       setIsLoading(true);
       setError(null);
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 Sekunden Timeout
       console.log("Fetching seats for show:", show.id);
       const response = await fetch(
-        `${process.env.BACKEND_URL}/shows/${show.id}/seats`,
-        {
-          signal: controller.signal
-        }
+        `${process.env.BACKEND_URL}/shows/${show.id}/seats`
       );
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -46,12 +39,7 @@ export function HallLayout({ show, onSeatSelectAction }: HallLayoutProps) {
       setError(null);
     } catch (err) {
       console.error('Fehler beim Laden der Sitze:', err);
-      
-      if (err instanceof Error && err.name === 'AbortError') {
-        setError('Zeitüberschreitung beim Laden der Sitze. Bitte versuchen Sie es erneut.');
-      } else {
-        setError('Fehler beim Laden der Sitze. Bitte versuchen Sie es erneut.');
-      }
+      setError('Fehler beim Laden der Sitze. Bitte versuchen Sie es erneut.');
     } finally {
       setIsLoading(false);
     }
@@ -85,16 +73,19 @@ export function HallLayout({ show, onSeatSelectAction }: HallLayoutProps) {
     }
   }, [show]); // Abhängigkeit von der gesamten show
 
+  // Fetch seats effect
   useEffect(() => {
-    fetchSeats();
-    
-    // Polling alle 30 Sekunden für Aktualisierungen
-    const intervalId = setInterval(fetchSeats, 30000);
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  },);
+    if (show?.id) {  // Nur ausführen wenn show.id existiert
+      fetchSeats();
+      
+      // Polling alle 30 Sekunden für Aktualisierungen
+      const intervalId = setInterval(fetchSeats, 30000);
+      
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, [show?.id]); // Abhängigkeit von show.id
 
   // Fetch categories
   useEffect(() => {
