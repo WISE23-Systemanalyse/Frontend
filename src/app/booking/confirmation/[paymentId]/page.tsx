@@ -34,6 +34,7 @@ export default function ConfirmationPage() {
   const [selectedBooking, setSelectedBooking] = useState<BookingDetails | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [friends, setFriends] = useState<User[]>([]);
+  const [showFriendsModal, setShowFriendsModal] = useState(false);
 
   useEffect(() => {
     const fetchConfirmationData = async () => {
@@ -334,10 +335,7 @@ export default function ConfirmationPage() {
               </button>
 
               <button
-                onClick={() => {
-                  transferBooking(booking.id, booking.user_id);
-                  onClose();
-                }}
+                onClick={() => setShowFriendsModal(true)}
                 className="w-full py-3 bg-blue-600 text-white rounded-lg 
                          hover:bg-blue-700 transition-all duration-200 
                          flex items-center justify-center gap-2"
@@ -508,6 +506,59 @@ export default function ConfirmationPage() {
     }
   };
 
+  // Neues FriendsModal Component
+  const FriendsModal = () => {
+    return (
+      <>
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60]"
+          onClick={() => setShowFriendsModal(false)}
+        />
+        <div className="fixed inset-0 flex items-center justify-center z-[60] p-4">
+          <div 
+            className="bg-[#2C2C2C] p-8 rounded-xl shadow-xl max-w-lg w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-xl font-bold text-white">Freund auswählen</h3>
+              <button 
+                onClick={() => setShowFriendsModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {friends.map((friend) => (
+                <button
+                  key={friend.id}
+                  onClick={() => {
+                    if (selectedBooking) {
+                      transferBooking(selectedBooking.id, friend.id);
+                      setShowFriendsModal(false);
+                      setShowModal(false);
+                    }
+                  }}
+                  className="w-full p-4 bg-[#3C3C3C] text-white rounded-lg 
+                           hover:bg-[#4C4C4C] transition-all duration-200 
+                           flex items-center justify-between"
+                >
+                  <span>{friend.firstName} {friend.lastName}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#141414] p-4 relative">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -610,7 +661,7 @@ export default function ConfirmationPage() {
           Booking selected: {selectedBooking ? 'yes' : 'no'}
         </div>
 
-        {/* Modal */}
+        {/* Modals */}
         {showModal && selectedBooking && (
           <TicketModal 
             booking={selectedBooking} 
@@ -619,6 +670,10 @@ export default function ConfirmationPage() {
               setSelectedBooking(null);
             }}
           />
+        )}
+
+        {showFriendsModal && (
+          <FriendsModal />
         )}
       </div>
     </div>

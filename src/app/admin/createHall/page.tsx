@@ -49,11 +49,10 @@ export default function CreateHall() {
     variant: 'default',
     isVisible: false
   });
-  const [categories, setCategories] = useState<[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
 
   // Füge useEffect hinzu, um Kategorien zu laden und zu loggen
   useEffect(() => {
-    console.log(categories);
     const fetchCategories = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/categories`);
@@ -66,7 +65,7 @@ export default function CreateHall() {
     };
 
     fetchCategories();
-  },);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +106,7 @@ export default function CreateHall() {
           seat_number: seat.seat_number,
           category_id: seat.category_id
         }));
-
+        
         const syncResponse = await fetch(`${API_BASE_URL}/seats/halls/${hall.id}/sync`, {
           method: 'POST',
           headers: {

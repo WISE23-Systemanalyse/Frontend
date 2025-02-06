@@ -123,9 +123,9 @@ export default function AdminBookings() {
   const filterBookings = (booking: Booking, searchTerm: string) => {
     const searchLower = searchTerm.toLowerCase()
     return (
-      booking.email.toLowerCase().includes(searchLower) ||
-      booking.user_name.toLowerCase().includes(searchLower) ||
-      booking.booking_id.toString() === searchTerm
+      booking.email?.toLowerCase().includes(searchLower) ||
+      booking.user_name?.toLowerCase().includes(searchLower) ||
+      booking.booking_id?.toString() === searchTerm
     )
   }
 

@@ -284,20 +284,15 @@ export default function FriendsPage() {
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
               </div>
             </div>
-            <button
-              onClick={() => {}}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Suchen
-            </button>
           </div>
 
-          {filteredFriends.length > 0 && (
-            <div className="mt-4 space-y-2">
-              {filteredFriends.map((user) => (
+          <div className="mt-4 space-y-2">
+            {filteredFriends.length > 0 ? (
+              filteredFriends.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between bg-[#1C1C1C] p-3 rounded-lg"
+                  onClick={() => handleOpenFriendModal(user)}
+                  className="flex items-center justify-between bg-[#1C1C1C] p-3 rounded-lg cursor-pointer hover:bg-[#2C2C2C]"
                 >
                   <div>
                     <p className="text-white">{user.userName}</p>
@@ -307,45 +302,18 @@ export default function FriendsPage() {
                       </p>
                     )}
                   </div>
-                  <button
-                    className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    Hinzufügen
-                  </button>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Friends List */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredFriends.map((friend) => (
-            <div
-              key={friend.id}
-              onClick={() => handleOpenFriendModal(friend)}
-              className="bg-[#1C1C1C] p-4 rounded-lg cursor-pointer hover:bg-[#2C2C2C] transition-colors"
-            >
-              <p className="text-white font-medium">{friend.userName}</p>
-              <p className="text-gray-400 text-sm">{friend.email}</p>
-              {friend.firstName && friend.lastName && (
-                <p className="text-gray-400 text-sm mt-1">
-                  {friend.firstName} {friend.lastName}
-                </p>
-              )}
-            </div>
-          ))}
-          {friends.length > 0 && filteredFriends.length === 0 && (
-            <div className="text-center text-gray-400 py-8 col-span-full">
-              Keine Freunde gefunden
-            </div>
-          )}
-          {friends.length === 0 && (
-            <div className="text-center text-gray-400 py-8 col-span-full">
-              Noch keine Freunde hinzugefügt
-            </div>
-          )}
+              ))
+            ) : friends.length === 0 ? (
+              <div className="text-center text-gray-400 py-4">
+                Noch keine Freunde hinzugefügt
+              </div>
+            ) : (
+              <div className="text-center text-gray-400 py-4">
+                Keine Freunde gefunden
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Friend Details Modal */}
