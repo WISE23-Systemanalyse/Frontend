@@ -12,13 +12,13 @@ const footerLinks = [
     links: [
       { name: 'Über uns', href: '/about' },
       { name: 'Kontakt', href: '/contact' },
-      { name: 'Impressum', href: '/impressum' },
     ] 
   },
   { 
     title: 'Rechtliches', 
     links: [
       { name: 'AGB', href: '/agb' },
+      { name: 'Impressum', href: '/impressum' },
     ]
   },
 ]

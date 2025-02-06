@@ -31,13 +31,20 @@ export default function Programm() {
     const loadShows = async () => {
       try {
         setIsLoading(true);
-        // Fetch shows mit Details (inkl. hall_name)
-        const response = await fetch(`${process.env.BACKEND_URL}/shows/details`);
+        console.log('Fetching shows...');
+        
+        // Absolute URL verwenden
+        const response = await fetch('http://localhost:8000/shows/details', {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        console.log('Response status:', response.status);
         if (!response.ok) throw new Error('Shows konnten nicht geladen werden');
-
-        console.log('Response Body:', response);
         
         const shows = await response.json();
+        console.log('Received shows:', shows);
         
         // Gruppiere Shows nach Tagen
         const today = new Date();
