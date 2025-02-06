@@ -6,6 +6,5 @@ export interface User {
     lastName?: string
     imageUrl?: string
     isVerified?: boolean
-    isAdmin?: boolean
     accessToken?: string
 }
