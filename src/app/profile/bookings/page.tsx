@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { BookingDetailsWithPayment as Booking } from '@/types/booking-details-payment';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8000';
 
 export default function BookingsPage() {
   const router = useRouter();
@@ -29,7 +28,7 @@ export default function BookingsPage() {
 
       try {
         // 1. Basis-Buchungen holen
-        const response = await fetch(`${API_BASE_URL}/users/${session.user.id}/bookings`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${session.user.id}/bookings`);
         if (!response.ok) throw new Error('Failed to fetch bookings');
         const bookingsData = await response.json();
 
@@ -37,19 +36,19 @@ export default function BookingsPage() {
         const enrichedBookings = await Promise.all(
           bookingsData.map(async (booking: Booking) => {
             // Seat Details
-            const seatResponse = await fetch(`${API_BASE_URL}/seats/${booking.seat_id}`);
+            const seatResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/seats/${booking.seat_id}`);
             const seatData = await seatResponse.json();
 
             // Kategorie Details
-            const categoryResponse = await fetch(`${API_BASE_URL}/categories/${seatData.category_id}`);
+            const categoryResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/categories/${seatData.category_id}`);
             const categoryData = await categoryResponse.json();
 
             // Show Details
-            const showResponse = await fetch(`${API_BASE_URL}/shows/${booking.show_id}`);
+            const showResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/shows/${booking.show_id}`);
             const showData = await showResponse.json();
 
             // Movie Details
-            const movieResponse = await fetch(`${API_BASE_URL}/movies/${showData.movie_id}`);
+            const movieResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/movies/${showData.movie_id}`);
             const movieData = await movieResponse.json();
 
             // Kombiniere alle Daten
