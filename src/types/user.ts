@@ -1,4 +1,5 @@
 export interface User {
+    isAdmin: any
     id: string
     email: string
     userName: string
@@ -6,6 +7,5 @@ export interface User {
     lastName?: string
     imageUrl?: string
     isVerified?: boolean
-    isAdmin?: boolean
     accessToken?: string
 }
