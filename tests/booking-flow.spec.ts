@@ -10,8 +10,15 @@ test.describe('Kinobuchung E2E', () => {
     await page.screenshot({ path: 'test-results/01-program-page.png' });
 
     // 2. Film auswählen
-    const bookButton = page.locator('.bg-\\[\\#2C2C2C\\] button:has-text("Tickets buchen")').first();
-    await expect(bookButton).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000); // Warte bis die Seite vollständig geladen ist
+
+    // Debug: Log HTML für Fehlersuche
+    console.log('Page Content:', await page.content());
+
+    // Versuche einen einfacheren Selektor
+    const bookButton = page.getByRole('button', { name: 'Tickets buchen' }).first();
+    await expect(bookButton).toBeVisible({ timeout: 10000 });
     await bookButton.click();
 
     // Debug-Screenshot 2: Nach Film-Auswahl
