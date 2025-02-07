@@ -207,51 +207,77 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          <Card
-            className="bg-[#2C2C2C] border-0 hover:bg-[#3C3C3C] transition-all duration-300 cursor-pointer group"
-            onClick={() => router.push('/profile/bookings')}
-          >
-            <div className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="bg-red-500 p-3 rounded-lg">
-                  <Ticket className="w-6 h-6 text-white" />
+        {userData.isAdmin ? (
+          <div className="grid grid-cols-1 gap-6 mt-8">
+            <Card
+              className="bg-[#2C2C2C] border-0 hover:bg-[#3C3C3C] transition-all duration-300 cursor-pointer group"
+              onClick={() => router.push('/admin')}
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="bg-red-500 p-3 rounded-lg">
+                    <Users2 className="w-6 h-6 text-white" />
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
                 </div>
-                <ArrowRight className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
+                <div className="mt-4">
+                  <h2 className="text-xl font-semibold text-white group-hover:text-red-500 transition-colors">
+                    Admin-Bereich
+                  </h2>
+                  <p className="mt-1 text-gray-400">
+                    Verwaltung des Kinobetriebssystems
+                  </p>
+                </div>
               </div>
-              <div className="mt-4">
-                <h2 className="text-xl font-semibold text-white group-hover:text-red-500 transition-colors">
-                  Meine Buchungen
-                </h2>
-                <p className="mt-1 text-gray-400">
-                  Alle deine Buchungen und Tickets verwalten
-                </p>
+            </Card>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            <Card
+              className="bg-[#2C2C2C] border-0 hover:bg-[#3C3C3C] transition-all duration-300 cursor-pointer group"
+              onClick={() => router.push('/profile/bookings')}
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="bg-red-500 p-3 rounded-lg">
+                    <Ticket className="w-6 h-6 text-white" />
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
+                </div>
+                <div className="mt-4">
+                  <h2 className="text-xl font-semibold text-white group-hover:text-red-500 transition-colors">
+                    Meine Buchungen
+                  </h2>
+                  <p className="mt-1 text-gray-400">
+                    Alle deine Buchungen und Tickets verwalten
+                  </p>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
 
-          <Card
-            className="bg-[#2C2C2C] border-0 hover:bg-[#3C3C3C] transition-all duration-300 cursor-pointer group"
-            onClick={() => router.push('/profile/friends')}
-          >
-            <div className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="bg-purple-500 p-3 rounded-lg">
-                  <Users2 className="w-6 h-6 text-white" />
+            <Card
+              className="bg-[#2C2C2C] border-0 hover:bg-[#3C3C3C] transition-all duration-300 cursor-pointer group"
+              onClick={() => router.push('/profile/friends')}
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="bg-purple-500 p-3 rounded-lg">
+                    <Users2 className="w-6 h-6 text-white" />
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
                 </div>
-                <ArrowRight className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
+                <div className="mt-4">
+                  <h2 className="text-xl font-semibold text-white group-hover:text-red-500 transition-colors">
+                    Freunde
+                  </h2>
+                  <p className="mt-1 text-gray-400">
+                    Deine Freunde verwalten und neue hinzufügen
+                  </p>
+                </div>
               </div>
-              <div className="mt-4">
-                <h2 className="text-xl font-semibold text-white group-hover:text-red-500 transition-colors">
-                  Freunde
-                </h2>
-                <p className="mt-1 text-gray-400">
-                  Deine Freunde verwalten und neue hinzufügen
-                </p>
-              </div>
-            </div>
-          </Card>
-        </div>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
