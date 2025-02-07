@@ -168,6 +168,16 @@ Bauen Sie die Anwendung für die Produktion:
 
 npm run build
 
+## End2End Buchungsprozess
+
+für einfches testen
+
+`npx playwright test`
+
+hier öffnet sich der Browser und man kann den gesammten Prozess einsehen
+
+`npx playwright test --debug`
+
 ## Technologie-Stack
 
 - Next.js 14
