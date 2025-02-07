@@ -1,6 +1,8 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import { redirect } from 'next/navigation'
 import { 
   Film, 
   Users, 
@@ -17,11 +19,21 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-
   const isActive = (path: string) => {
     return pathname === path 
       ? 'bg-red-500 text-white' 
       : 'text-gray-400 hover:bg-red-500 hover:text-white'
+  }
+
+  const { data: session } = useSession({
+    required: true,
+    onUnauthenticated() {
+      redirect('/auth/signin');
+    },
+  });
+
+  if(session?.user?.isAdmin !== true) {
+    return <div className="h-screen flex items-center justify-center text-white">Du hast keine Berechtigung, diese Seite zu sehen.</div>
   }
 
   return (
